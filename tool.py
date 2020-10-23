@@ -12,7 +12,7 @@ with open('sdss_in_class.txt') as fp:
 			m_CIV.append(string[9])
 
 print(len(m_CIV))
-
+########
 '''with open('sdss_in_class.txt') as fp:
 	lines = fp.readlines()[1:]
 	for line in lines:
