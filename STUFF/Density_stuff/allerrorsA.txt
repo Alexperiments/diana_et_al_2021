@@ -1,0 +1,14 @@
+# mediasigma  sigmasigma   mediafwhm   sigmafwhm   medialumi   sigmalumi
+#
+       26.98       4.092       41.71        2.54       489.8       30.04
+# mediasigma  sigmasigma   mediafwhm   sigmafwhm   medialumi   sigmalumi
+#
+       21.58       1.864       13.02      0.7834         183       8.737
+# mediasigma  sigmasigma   mediafwhm   sigmafwhm   medialumi   sigmalumi
+#
+        13.4      0.2961       8.274     0.08763         522       3.649
+# mediasigma  sigmasigma   mediafwhm   sigmafwhm   medialumi   sigmalumi
+#
+       17.38       1.136       30.81       5.533       133.1       4.982
+# mediasigma  sigmasigma   mediafwhm   sigmafwhm   medialumi   sigmalumi
+#

@@ -1,0 +1,625 @@
+fig	#
+	data conteggio_per_sm.txt
+	lines 0 1
+	read zzz 1
+	define z_lim(lg(zzz))
+
+	erase
+	add_ctype gray 100 100 100
+	add_ctype violet 128 0 128
+	add_ctype pink 142 80 221
+	add_ctype orange 255 100 0
+	colours
+	
+	location 6000 31000 6000 31000
+	limits $z_lim 0.96 -3 3.8
+	ticksize -1 2 0 0
+	expand 2
+	lweight 5
+	ltype 0
+	ctype 0
+	box 
+			
+	expand 2
+	data hopk_fedd1_allz.dat 
+	read {z 1 y 2}
+	ylog
+	ctype dark_blue 
+	set zz=z
+	set yy=y
+	
+	data hopk_fedd03_allz.dat 
+	read {z 1 y 2}
+	ylog
+	expand 1.4
+	relocate 0.5 3.3
+	label All AGN (RL+RQ) 
+	angle 90
+	lweight 1
+	shed (lg(zz)) yy (lg(z)) y 500
+	angle 0
+	lweight 5
+	
+	## OUR DEFINITION OF GAMMA
+	set lorentz=10
+	
+	# ---------  Roberto ------------
+	ctype pink
+	expand 2
+	ptype 4 3
+	data rdc2.dat
+	read{z1 1 z2 2 n1 3 n2 4 v2 5 v1 6}
+	set aux=sqrt(n1+n2)
+	set errnp=lg(1.+aux/(n1-n2))
+	set errnm=-lg(1.-aux/(n1-n2))
+	set factor=lg(2.*lorentz*lorentz)  # 2 \Gamma^2
+	set fi=lg(n1-n2)+factor-lg(v2-v1)
+	set zlog=0.5*(lg(z2)+lg(z1))
+	set errz=zlog-lg(z1)
+	set zzlog=zlog
+	set ffi=fi
+	lweight 10
+	connect zlog ffi
+	lweight 2
+	#read{z1 1 z2 2 n1 3 n2 4 v2 5 v1 6}
+	#set aux=sqrt(n1+n2)
+	#set errnp=lg(1.+aux/(n1-n2))
+	#set errnm=-lg(1.-aux/(n1-n2))
+	#set factor=lg(2.*5*5)  # 2 \Gamma^2
+	#set fi=lg(n1-n2)+factor-lg(v2-v1)
+	#set zlog=0.5*(lg(z2)+lg(z1))
+	#set errz=zlog-lg(z1)
+	#ctype tomato
+	#angle 125
+	#lweight 2
+	#shed zlog fi zzlog ffi 15000
+	#lweight 1
+	#ctype red
+	#data rdc2.box 
+	#read {zlog 1 ennelog 2}
+	#shade 50 zlog ennelog
+	
+	
+	angle 0
+	lweight 3
+	ctype pink
+	expand 1.5
+	relocate 0.85 1.03
+	label A09
+	#relocate 0.94 0.6
+	#label (blazar)
+	expand 2
+	
+	
+	
+	# ---------  Roberto: A09 ------------
+	expand 2.5
+	ptype 4 3
+	
+	data rdc4.dat
+	read{z1 1 z2 2 n1 3 n2 4 v2 5 v1 6}
+	set aux=sqrt(n1+n2)
+	set errnp=lg(1.+aux/(n1-n2))
+	set errnm=-lg(1.-aux/(n1-n2))
+	set factor=0.  # 2 \Gamma^2
+	set factor=lg(2.*lorentz*lorentz)  # 2 \Gamma^2
+	set fi=lg(n1-n2)+factor-lg(v2-v1)
+	set zlog=0.5*(lg(z2)+lg(z1))
+	set errz=zlog-lg(z1)
+	set zzlog=zlog
+	set ffi=fi
+	ctype orangish
+	lweight 10
+	connect zlog ffi
+	lweight 3
+	expand 1.5
+	relocate 0.74 -1
+	label G10
+	lweight 5
+	
+	ctype default
+	#data rdc4.dat
+	#read{z1 1 z2 2 n1 3 n2 4 v2 5 v1 6}
+	#set aux=sqrt(n1+n2)
+	#set errnp=lg(1.+aux/(n1-n2))
+	#set errnm=-lg(1.-aux/(n1-n2))
+	#set factor=0.  # 2 \Gamma^2
+	#set factor=lg(2.*5*5)  # 2 \Gamma^2
+	#set fi=lg(n1-n2)+factor-lg(v2-v1)
+	#set zlog=0.5*(lg(z2)+lg(z1))
+	#set errz=zlog-lg(z1)
+	#ctype green
+	#angle 45
+	#shed zlog fi zzlog ffi 15000
+	#angle 0
+
+
+	### DATA POINTS
+	# --------- Ajello z=3-4 ---------------------
+	ctype gray
+	ptype 4 0
+	expand 3
+	relocate 0.5396 1.8325 # 68 radioloud Gpc^(-3) @ z=3-4 with M>1e9
+	#dot
+	set xx=0.5396 
+	set yy= 1.8325
+	## correct to may Lorentz factor
+	set yy=yy-lg(15*15)+lg(lorentz*lorentz)
+	define xxx (xx)
+	define yyy (yy)
+	relocate $xxx $yyy
+	dot
+	set err=0.60206-0.5396
+	errorbar xx yy err 1
+	errorbar xx yy err 3
+	set err=1.8325-1.36
+	errorbar xx yy err 4
+	expand 0.7
+	draw_arrow  0.53959  1.36 0.53959  2.15 
+	ctype default
+	expand 1.5
+	relocate 0.35 0.7
+	label 2\Gamma^2\Phi_{blazars}
+	relocate 0.35 0.25
+	label \Gamma = 10
+	
+
+	ctype default
+	expand 2
+	xlabel z
+	ylabel Log \Phi(M>10^{9}M_{\odot}) [Gpc^{-3}]
+	
+	#
+	
+put_point 5 # 1)N_blazar 2)z_min 3)z_max 4)area 5)lorentz_factor 
+	set N = $1
+	set z_min = $2
+	set z_max = $3
+	set area = $4
+	set lorentz_factor = $5
+	
+	set areatot = 4*3.14*180*180/(3.14*3.14)
+	z2vol z_min 70
+	set z_min_vol = volume
+	z2vol z_max 70
+	set z_max_vol = volume
+	
+	set shell_vol = (z_max_vol-z_min_vol)*area/areatot
+	set dens = N/shell_vol
+	err68 N
+	set dens_up = high/shell_vol
+	set dens_low = low/shell_vol
+	set log_dens = lg(dens)
+	set log_err_up = lg(dens_up) - log_dens
+	set log_err_low = log_dens - lg(dens_low)
+	set log_dens = log_dens + lg(lorentz_factor*lorentz_factor*2)
+	set mean_z = (z_max+z_min)*0.5
+	set log_bar_up = lg(z_max) - lg(mean_z)
+	set log_bar_low = lg(mean_z) - lg(z_min)
+	ptype 1 0
+	expand 3
+	set z_class= mean_z
+	set lz_class=lg(z_class)
+	
+	ctype red
+	points lz_class log_dens
+		errorbar lz_class log_dens log_err_up 2
+		errorbar lz_class log_dens log_err_low 4
+		errorbar lz_class log_dens log_bar_up 1
+		errorbar lz_class log_dens log_bar_low 3
+
+CLASS #
+	
+	## OUR POINTS
+	
+	data conteggio_per_sm.txt  
+	read zz 1
+	read counts 2
+	read area 3
+	define z_width(z_width*0.5)
+	ctype dark_red		
+	set lorentz_factor = 10
+	
+	do i=0,DIMEN(zz)-2{ 
+		set zmin = zz[$i]
+		set zmax = zz[$i+1]
+		put_point counts[$i] zmin zmax area lorentz_factor
+	}
+	put_point 10 4 5 area lorentz_factor
+	put_point 2 5 6 area lorentz_factor
+      #
+      
+SG	#
+	
+	### LOWER LIMITS Sbarrato&Ghisellini+15
+	#
+	ctype green2
+	expand 0.8
+	set dens_sb=1.25  
+	## correction for lmy lorentz
+	set dens_sb=dens_sb-lg(15*15)+lg(lorentz*lorentz)
+	set zz_sb=lg(4.5)
+	set up=dens_sb+0.4
+	draw_arrow zz_sb dens_sb zz_sb up 
+	expand 1.5
+	ptype 2 1
+	points zz_sb dens_sb
+	expand 0.8
+
+	set err_4_5_up = lg(5) - lg(4.5)
+	set err_4_5_down = lg(4.5) -lg(4)
+	set z_sb = zz_sb[0]
+	set dens_sb = dens_sb[0]
+	errorbar z_sb dens_sb err_4_5_up 1
+	errorbar z_sb dens_sb err_4_5_down 3
+
+	set err_5_6_up = lg(6) - lg(5.5)
+	set err_5_6_down = lg(5.5) -lg(5)
+	set z_sb = zz_sb[1]
+	set dens_sb = dens_sb[1]
+	errorbar z_sb dens_sb err_5_6_up 1
+	errorbar z_sb dens_sb err_5_6_down 3
+
+	set dens_sb=0.9
+	## correction for lmy lorentz
+	set dens_sb=dens_sb-lg(15*15)+lg(lorentz*lorentz)
+	set zz_sb=lg(5.5)
+	set up=dens_sb+0.4
+	draw_arrow zz_sb dens_sb zz_sb up 
+		expand 1.5
+	ptype 2 1
+	points zz_sb dens_sb
+	#
+	
+#############################################
+######### 	mass & luminosity function
+#############################################
+l2v 	#
+	ticksize 0 0 0 0
+	data dist_vol.txt
+	lines 9 1000
+	read dl 2
+	read vol 3
+	limits dl vol
+	ctype red
+	points dl vol
+	ctype default
+	set ddl=0,80000,1
+	spline dl vol ddl vvol
+	connect ddl vvol
+	#
+lum2vol 2 # $1=lum distance (Mpc) --> comoving volume (Gpc^3)
+	set x=$1
+	data dist_vol.txt
+	lines 9 1000
+	read rrz 1
+	read rrdl 2
+	read rrvol 3
+	## correction for the H0 (dist_vol.txt is computed for H0=71)
+	set rrdl=rrdl*(71/$2)
+	set rrvol=rrvol*( (71/$2)**3)
+	spline rrdl rrvol x volume
+	#print {x volume}
+	#
+lu2vol 1 # $1=lum distance (Mpc) --> comoving volume (Gpc^3)
+	set x=$1
+	spline rrdl rrvol x volume
+	#print {x volume}
+	#
+z2vol 2 # $1=z --> comoving volume (Gpc^3) $2=H0
+        # flat Universe (omega_m=0.3 omega_lambda=0.7)
+	set H0=$2
+	set zzee=$1
+	set om_m=0.3
+        dl_omega H0 om_m zzee
+	lum2vol dl H0
+	#print {volume}
+        #
+dlmax 7 # $1=Log flux limit $2=Log Lum $3=maximum z (if done in bin of z!) $4=alpha (for k-correction) $5=H0 $6=zobserved $7=evolut. parameter (1+z)^$7
+
+        dl_omega $5 0.3 $3
+        #dl_omega 71 0.3 $3
+	#dl_omega 70 0.3 $3
+	set maxz=$3
+	set maxd=dlmpc
+	set H0=$5
+	set logflim=$1
+	set lloglum=$2
+	set zobs=$6
+
+	### set binning...
+	set bi=0.001	
+	
+	## set alpha for k-correction
+	set alph=$4
+
+	set zbin=0.0001,40,bi
+	set alph=alph*(zbin/zbin)
+	set llglum=lloglum*(zbin/zbin)
+
+	## SET EVOLUTION...#####
+	## evol1 = (1+z)^gamma
+	## TO SHUT UP THE EVOLUTION JUST PUT EV_PAR=0
+	#set ev_par=1.46
+	set ev_par=$7
+	evol1 zbin ev_par
+	set evolzbin=evol
+	evol1 zobs ev_par
+	set evolzobs=evol
+	set evol_ratio=evolzbin/evolzobs
+
+	########################
+	fluxom llglum zbin alph H0 evol_ratio
+
+	set n=dimen(zbin)
+	set flusso=10**llogflux
+	set flusso_lim=10**logflim
+	set zmax=0
+	set dmax=100000
+	do i=0,n-2 {if ((flusso[$i]>=flusso_lim) && (flusso[$i+1]<flusso_lim)) {set zmax=zbin[$i]+(bi/2) set dmax=(dlmpc[$i+1]+dlmpc[$i])/2 print {dmax}}}
+	if (zmax>maxz) {set zmax=maxz set dmax=maxd} 
+	if (zmax==0) {set zmax=maxz set dmax=maxd}
+	#print {zmax dmax}
+	#
+vmax 7  # $1=Log flux limit $2=Log luminosity $3=maxmimum z (if done in bin of z) $4=alpha (for k-corr) $5=H0 $6=zobs $7=evolut parameter (1+z)^$7
+	# ==> max comoving volume
+	dlmax $1 $2 $3 $4 $5 $6 $7
+	#print {zmax}
+	set checkflim=$1
+	set checklum=$2
+	set checkmaxz=$3
+	set checkalpha=$4
+	set checkh0=$5
+	set checkzobs=$6
+	#print {zmax checkflim checklum checkmaxz checkalpha checkh0 checkzobs}
+	
+	lum2vol dmax $5
+	##lu2vol dmax
+	#print {zmax}
+	#   
+	##################################################
+lumom 4	# based on the approximate formulae for Dlum
+	# presented in Pen 1999, ApJS, 120, 49
+	# for LAMBDA COSMOLOGY in FLAT UNIVERSE
+	# Omega_matter + Omega_Lambda =0 
+	# Here we define Omega (== Omega_matter)	
+     
+	set z=$2
+	set flux=$1
+	set alpha=$3
+	set c=2.9979e5
+	set H0=$4
+	set Omega = 0.3
+	set pig=3.14159
+
+	dl_omega H0 Omega z
+
+	set dl=dl*3.085678e4
+	set k =(1+z)**(alpha-1)
+	set lum40=flux*(dl**2)*4*pig*k
+
+	set lomega = lg(lum40)+40
+
+	#print {flux z alpha lum40 lomega}
+	#
+dl_omega 3 # $1=H0 $2=Omega matter $3=z
+	# => Dlum in Mpc
+
+	set H0=$1
+	set Omega=$2
+	set z=$3
+	set c=2.9979e5
+
+	nuu Omega 1
+	set nu1=nu
+	
+	set x=1/(1+z)
+	nuu Omega x
+	set nuz=nu
+
+	set dl = (c/H0)*(1+z)*(nu1 - nuz)
+	set dlmpc=dl
+	#print {dl}	
+	#
+nuu 2	#  $1=Omega $2=A
+
+	set a=$2
+	set Omega=$1
+
+	set s3=(1-Omega)/Omega
+	set s2=s3**(2/3)
+	set s1=s3**(1/3)	
+	set s4=s1**4
+
+	set a2=a*a
+	set a3=a*a*a
+	set a4=a*a*a*a
+
+	set nu = 2*sqrt(s3+1)*((1/a4) -0.1540*(s1/a3) +0.4304*(s2/a2) + 0.19097*(s3/a) + 0.066941*s4)**(-1/8)
+	#
+evol1 2	# (1+z)^gamma
+	# $1=z, $2=gamma
+	set evol=(1+$1)**$2
+	#
+fluxom 5 # based on the approximate formulae for Dlum
+	# presented in Pen 1999, ApJS, 120, 49
+	# for LAMBDA COSMOLOGY in FLAT UNIVERSE
+	# Omega_matter + Omega_Lambda =0 
+	# Here we define Omega (== Omega_matter)	
+        # $1=log Lum $2=z $3=alpha $4=H0 $5=evol ratio
+	set z=$2
+	set logalum=$1
+	set alpha=$3
+	set c=2.9979e5
+	set H0=$4
+	set Omega = 0.3
+	set pig=3.14159
+
+	set evol_ratio=$5
+
+	dl_omega H0 Omega z
+
+	set dl=dl*3.085678e4
+	set k =(1+z)**(alpha-1)
+	set llogflux=logalum+lg(evol_ratio)-2*lg(dl)-lg(4*pig*k)-40
+	set flux=10**llogflux
+	#print {llogflux flux z alpha logalum}
+	#
+up_frac 3 # $1=n1 $2=n2 $3=S
+	# Single sided interval for conf-level given by the value of S
+	# S from (Gherels Tab.3): e.g. 90% conf level ==>S=1.282 
+	# NOTE THAT FOR DOUBLE SIDED CONF.LEVEL of conf.level=CL'
+	# you have to compute the two single sided values 
+	# using the S corresponding to CL=(1+CL')/2.
+	# e.g. for double sided error with CL'=0.90 =>CL=0.95 
+	#
+	# this macro uses the aprox. formula given by Gehrels 1986,ApJ,303,336
+	# (eq.26) which is fairly accurate (<4%) 
+	# 
+        # A.C., Apr 2007
+
+	set S=$3
+
+	if ($2>0) {
+	set lambda = (S*S -3)/6
+	set h=( (1/(2*$2-1)) + (1/(2*$1+1)))
+	set h=2/h
+	set w=(S*(h+lambda)**0.5)/h
+	set w=w+( (1/(2*$2-1) - 1/(2*$1+1)) * (lambda+(5/6) - (2/(3*h))) )
+	set eps=0.64*(1-S)*exp(-1*$2)
+	set p1u = (($1+1)*exp(2*w)+eps*$2)/(($1+1)*exp(2*w)+$2)
+	}
+	
+	if ($2==0 && $1>0) {
+	set p1u = 1
+	}
+	
+	if ($1==0 && $2>0) {
+	set p1u = 1 - (1-CL)**(1/$2)
+	}
+
+	if ($2==1) {
+	set p1u = CL**(1/($1+$2))
+	}
+	#print {p1u}
+	#
+conf_frac68 2 # $1=n1 $2=N TOT
+	## 68% CL double sided is 84% CL in on-sided =>S=1.0
+	set S=1.0
+	set CL=0.84
+	
+	set n1=$1
+	set n2=$2-$1
+	set upper_n1=n1-n1
+	set lower_n1=upper_n1
+
+	set N=dimen(n1)
+	do i=0,N-1 {
+	up_frac n1[$i] n2[$i] S
+	set upper_n1[$i]= p1u
+
+	up_frac  n2[$i] n1[$i] S
+	set lower_n1[$i]=1-p1u
+	}
+	set frac=n1/(n1+n2)
+	print {frac lower_n1 upper_n1}
+	#
+conf_frac90 2 # $1=n1 $2=N TOT
+	## 90% CL double sided is 95% CL in on-sided =>S=1.645
+	set S=1.645
+	set CL=0.95
+	set n1=$1
+	set n2=$2-$1
+	set upper_n1=n1-n1
+	set lower_n1=upper_n1
+
+	set N=dimen(n1)
+	do i=0,N-1 {
+	up_frac n1[$i] n2[$i] S
+	set upper_n1[$i]= p1u
+
+	up_frac  n2[$i] n1[$i] S
+	set lower_n1[$i]=1-p1u
+	}
+	set frac=n1/(n1+n2)
+	print {frac lower_n1 upper_n1}
+	#
+	
+conf_frac95 2 # $1=n1 $2=N TOT
+	## 95% CL double sided is 97.5% CL in on-sided =>S=1.960
+	set S=1.960
+	set CL=0.975
+	set n1=$1
+	set n2=$2-$1
+	set upper_n1=n1-n1
+	set lower_n1=upper_n1
+
+	set N=dimen(n1)
+	do i=0,N-1 {
+	up_frac n1[$i] n2[$i] S
+	set upper_n1[$i]= p1u
+
+	up_frac  n2[$i] n1[$i] S
+	set lower_n1[$i]=1-p1u
+	}
+	set frac=n1/(n1+n2)
+	print {frac lower_n1 upper_n1}
+	#
+conf_frac99 2 # $1=n1 $2=N TOT
+	## 99% CL double sided is 99.5% CL in on-sided =>S=2.576
+	set S=2.576
+	set CL=0.995
+	set n1=$1
+	set n2=$2-$1
+	set upper_n1=n1-n1
+	set lower_n1=upper_n1
+
+	set N=dimen(n1)
+	do i=0,N-1 {
+	up_frac n1[$i] n2[$i] S
+	set upper_n1[$i]= p1u
+
+	up_frac  n2[$i] n1[$i] S
+	set lower_n1[$i]=1-p1u
+	}
+	set frac=n1/(n1+n2)
+	print {frac lower_n1 upper_n1}
+	#
+err68 1	# poiss error on single number
+	set norma=100000
+	conf_frac68 $1 norma
+	set low=lower_n1*norma
+	set high=upper_n1*norma
+	print {low high}
+	#
+
+colours # new method: using RGB codes!
+     add_ctype orange 255 165 0
+     add_ctype brown 130 90 44
+     #add_ctype pink 255 204 255
+     add_ctype light_blue 204 255 255
+     add_ctype light_blue1 227 242 253
+     add_ctype light_blue2 187 222 251
+     add_ctype light_blue3 144 202 249
+     add_ctype reddish 252 192 178
+     add_ctype blueish 217 241 247
+     add_ctype greenish 242 250 140
+     add_ctype orangish 205 171 0
+     add_ctype grey 180 180 180
+     add_ctype grey_dark 160 160 160
+     add_ctype green2 17 133 5
+     add_ctype dark_blue 25 132 172
+     add_ctype dark_red  230 20 20
+     #
+
+go #
+	dev postencap SG.eps
+	fig
+	SG
+	dev x11
+
+	dev postencap CLASS.eps
+	fig
+	CLASS
+	dev x11
+#

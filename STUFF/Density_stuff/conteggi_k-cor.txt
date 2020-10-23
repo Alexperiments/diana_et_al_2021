@@ -1,0 +1,6 @@
+Redshift: 0.75-1.25 || Filtro mag e flux: 11.0 || Filtro mag: 86.0 || Filtro flux: 12.0 || Nessun filtro: 150.0 || limite flusso medio: 662 mJy || limite mag medio: 18.1
+Redshift: 1.25-1.75 || Filtro mag e flux: 39.0 || Filtro mag: 182.0 || Filtro flux: 42.0 || Nessun filtro: 227.0 || limite flusso medio: 275 mJy || limite mag medio: 19.1
+Redshift: 1.75-2.25 || Filtro mag e flux: 38.0 || Filtro mag: 118.0 || Filtro flux: 41.0 || Nessun filtro: 129.0 || limite flusso medio: 150 mJy || limite mag medio: 19.8
+Redshift: 2.25-2.75 || Filtro mag e flux: 21.0 || Filtro mag: 65.0 || Filtro flux: 23.0 || Nessun filtro: 70.0 || limite flusso medio: 95 mJy || limite mag medio: 20.2
+Redshift: 2.75-3.25 || Filtro mag e flux: 21.0 || Filtro mag: 41.0 || Filtro flux: 21.0 || Nessun filtro: 41.0 || limite flusso medio: 66 mJy || limite mag medio: 20.6
+Redshift: 3.25-3.75 || Filtro mag e flux: 6.0 || Filtro mag: 18.0 || Filtro flux: 6.0 || Nessun filtro: 18.0 || limite flusso medio: 49 mJy || limite mag medio: 21.0

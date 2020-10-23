@@ -1,0 +1,2421 @@
+rf 9	# impostare gli intervalli per la rimozione del continuo, custom mask e secondo intervallo background (def: 1690-1710)
+	# 
+
+	set xback1 = 1435
+	set xback2 = $9
+	set xback3 = $5
+	set xback4 = $6
+
+	set xmask1 = $7
+	set xmask2 = $8
+	set xmask3 = 1600
+	set xmask4 = 1680
+
+	# Plot inferiore: spettro nel rest frame centrato nell'intervallo di background +- 50
+	
+	window 1 -2 1 1
+	lweight 2.5
+	expand 1.3
+	data $1"spect.txt"
+	set z = $2
+	read x 1 
+	read y 2
+	set x = x/(1 + z)
+	set y = y*(1 + z)
+	set yt = y if(x >= 1435 && x <= 1710)
+	set xt = x if(x >= 1435 && x <= 1710)
+	set y1temp = yt if(xt > 1500 && xt < 1560)
+	max y1temp
+	min y1temp
+	define max (max*1.1)
+	define min (min-min*0.1)
+	limits xt $min $max
+	smooth yt ys 3
+	box
+	xlabel \lambda (\AA)
+	relocate (1300 10500)
+	angle 90
+	label f(erg s^{-1} cm^{-2} \AA^{-1}) \times 10^{-17}
+	bgline 1435
+	bgline $9
+	bgline $5
+	bgline $6
+	
+	connetti xt ys
+	box 0 2 0 0
+
+	# Plotta il continuo da rimuovere in rosso
+
+	set xb = xt if((xt > xback1 && xt < xback2) || ( xt > $5 && xt < $6))
+	set yb = ys if((xt > xback1 && xt < xback2) || ( xt > $5 && xt < $6))
+	ctype red
+	lsq xb yb xt yf k
+	connect xt yf
+	ctype default
+
+	# Plot superiore: spettro senza continuo con intervalli mascherati
+
+	window 1 -2 1 2	
+	set ynet = ys - yf
+	set ytemp = ynet if(xt > 1520 && xt < 1558)
+	max ytemp
+	min y1temp
+	define max (max*1.1)
+	define min (-max*0.15)
+	limits xt $min $max
+	box 0 2 0 0
+
+	mask $7 $8
+	mask $3 $4
+	mask 1600 1680
+
+	set xm = xt if(!((xt > xmask1 && xt < xmask2) || ( xt > xmask3 && xt < xmask4)))
+	set ym = ynet if(!((xt > xmask1 && xt < xmask2) || ( xt > xmask3 && xt < xmask4)))
+	set check0 = ym
+	if($3 != 0 && $4 != 0) {set xm = xt if(!((xt > xmask1 && xt < xmask2) || ( xt > xmask3 && xt < xmask4)||(xt >= $3 && xt< $4)))
+				set ym = ynet if(!((xt > xmask1 && xt < xmask2) || ( xt > xmask3 && xt < xmask4)||(xt >= $3 && xt< $4)))
+				set check1 = ym			
+	}
+
+	connetti xt ynet
+
+	SET DIMEN(zeros) = DIMEN(xt)
+	
+	relocate (12000 31500)
+	label $1
+
+	set yCIV = {1000 -1000}
+	set xCIV = {1549 1549}
+
+	connetti xm ym
+
+	ctype blue
+	connect xt zeros
+	ctype default
+
+	ctype green
+	connect xCIV yCIV
+	ctype default
+
+	set ym = ym if(xm > 1435 && xm < 1710)
+	set check2 = ym
+	set xm = xm if(xm > 1435 && xm < 1710)
+	print $1.qdp {xm ym} 
+	set check3 = ym
+	lweight 1
+	#
+
+max 1 	# trova il massimo del vettore
+	set x = $1
+	sort {x}
+	set ntot = dimen(x)
+	define ntot (ntot)
+	set max = x[$ntot-1]
+	#
+
+min 1 	# trova il minimo del vettore
+	set x = $1
+	sort {x}
+	set min = x[0]
+	#
+
+colours # new method: using RGB codes!
+     add_ctype orange 255 165 0
+     add_ctype brown 130 90 44
+     add_ctype pink 255 204 255
+     add_ctype light_blue 204 255 255
+     add_ctype light_blue1 227 242 253
+     add_ctype light_blue2 187 222 251
+     add_ctype light_blue3 144 202 249
+     add_ctype reddish 252 192 178
+     add_ctype blueish 217 241 247
+     add_ctype greenish 242 250 140
+     add_ctype orangish 254 217 106
+     add_ctype grey 180 180 180
+     add_ctype grey_dark 160 160 160
+     add_ctype green2 192 255 62
+     add_ctype vermilion 120 60 0
+     add_ctype bluish_green 0 90 75
+     #
+shd 4   # $1=x $2=y up $3=y down $4=how close the lines
+     set ax=$1
+     set ayp=$2
+     set aym=$3
+
+         set nmax=dimen(ax)
+         set ymm=aym-aym
+         set xx=ax-ax
+         do i=0,nmax-1 {set ymm[$i]=aym[nmax-$i-1] set xx[$i]=ax[nmax-$i-1]}
+         shade $4 (ax CONCAT xx) (ayp concat ymm)
+
+        #
+
+mask 2	# maschera con uno shading l'intervallo passato come parametri
+	set xshade = {0 0}
+	set xshade[0] = $1
+	set xshade[1] = $2
+	set ysup = {1000 1000}
+	set yinf = {-1000 -1000}
+	angle 45
+	colours
+	ctype grey
+	shd xshade ysup yinf 5
+	ctype default
+	angle 0
+	#
+	
+bgline 1 #	disegna rette verticali per segnalare gli intervalli di background
+	set bgline = {-1000 1000}
+	set xbg = {0 0}
+	set xbg[0] = $1
+	set xbg[1] = $1
+	ctype red
+	connect xbg bgline
+	ctype default
+	#
+
+toeps   #	
+		dev postencap GB6J001115p144608_spect.eps
+		gb0011
+		dev x11
+
+		dev postencap GB6J003126p150729_spect.eps
+		gb0031
+		dev x11
+
+		dev postencap GB6J012126p034646_spect.eps
+		gb0121
+		dev x11
+
+		dev postencap GB6J083548p182519_spect.eps
+		gb0835
+		dev x11
+
+		dev postencap GB6J083945p511206_spect.eps
+		gb0839
+		dev x11
+
+		dev postencap GB6J091825p063722_spect.eps
+		gb0918
+		dev x11
+
+		dev postencap GB6J102107p220904_spect.eps
+		gb1021
+		dev x11
+
+		dev postencap GB6J102623p254255_spect.eps
+		gb1026
+		dev x11
+
+		dev postencap GB6J132512p112338_spect.eps
+		gb1325
+		dev x11
+
+		dev postencap GB6J134811p193520_spect.eps
+		gb1348
+		dev x11
+
+		dev postencap GB6J141212p062408_spect.eps
+		gb1412
+		dev x11
+
+		dev postencap GB6J143023p420450_spect.eps
+		gb1430
+		dev x11
+
+		dev postencap GB6J151002p570256_spect.eps
+		gb1510
+		dev x11
+
+		dev postencap GB6J153533p025419_spect.eps
+		gb1535
+		dev x11
+
+		dev postencap GB6J161216p470311_spect.eps
+		gb1612
+		dev x11
+
+		dev postencap GB6J162956p095959_spect.eps
+		gb1629
+		dev x11
+
+		dev postencap GB6J164856p460341_spect.eps
+		gb1648
+		dev x11
+
+		dev postencap GB6J171103p383016_spect.eps
+		gb1711
+		dev x11
+
+		dev postencap GB6J235758p140205_spect.eps
+		gb2357
+		dev x11
+	#	
+						
+
+gb0011	#1
+	rf "GB6J001115p144608_" 4.94 	1565 1580 	1610 1640 	1472 1497	1465
+	set ym = ym if(!(xm > 1585 && xm <= 1600 || xm > 1680))
+	set xm = xm if(!(xm > 1585 && xm <= 1600 || xm > 1680))
+	smooth ym ynew 5
+	print "GB6J001115p144608_.qdp" {xm ynew} 
+	#
+
+gb0031	#2
+	rf "GB6J003126p150729_" 4.29 	0 0 		1620 1625	1475 1501	1455
+	#
+
+gb0121	#3
+	rf "GB6J012126p034646_" 4.13 	1523 1525 	1690 1710	1470 1495	1465
+	#
+
+gb0835	#4
+	rf "GB6J083548p182519_" 4.41 	0 0	 	1690 1710	1475 1495	1465	
+	smooth ym ynew 7
+	print "GB6J083548p182519_.qdp" {xm ynew} 
+	#
+
+gb0839	#5
+	rf "GB6J083945p511206_" 4.40 	1518 1525 	1675 1695	1475 1495	1465	
+	#
+
+gb0918 	#6
+	rf "GB6J091825p063722_" 4.17	1508 1520 	1690 1705	1475 1495	1465
+	set ym = ym if(!(xm > 1445 && xm < 1460))
+	set xm = xm if(!(xm > 1445 && xm < 1460))
+	smooth ym ynew 5
+	print "GB6J091825p063722_.qdp" {xm ynew} 
+	#
+
+gb1021 	#7
+	rf "GB6J102107p220904_" 4.26 	1598 1682 	1690 1710	1475 1495	1465
+	#
+
+gb1026 	#8
+	rf "GB6J102623p254255_" 5.27 	1570 1580 	1570 1580	1484 1497	1465
+	smooth ym ynew 7
+	print "GB6J102623p254255_.qdp" {xm ynew} 
+	#
+
+gb1325 	#9
+	rf "GB6J132512p112338_" 4.40 	0 0 		1690 1710	0 0	1465
+	#
+
+gb1348 	#10
+	rf "GB6J134811p193520_" 4.38	1550 1552.5 	1690 1710	1475 1495	1465	
+	smooth ym ynew 5
+	print "GB6J134811p193520_.qdp" {xm ynew} 
+	#
+
+gb1412 	#11	
+	rf "GB6J141212p062408_" 4.37 	1680 1681.6 	1660 1680	1475 1475	1465
+	smooth ym ynew 13
+	print "GB6J141212p062408_.qdp" {xm ynew} 
+	#
+
+gb1430 	#12
+	rf "GB6J143023p420450_" 4.72 	0 0 		1690 1710	1475 1495	1465
+	smooth ym ynew 5
+	print "GB6J143023p420450_.qdp" {xm ynew} 
+	#
+
+gb1510 	#13
+	rf "GB6J151002p570256_" 4.31 	0 0 		1690 1710	1475 1495	1465
+	#
+
+gb1535 	#14
+	rf "GB6J153533p025419_" 4.37 	1554 1556	1690 1710	1475 1496	1465
+	smooth ym ynew 9
+	print "GB6J153533p025419_.qdp" {xm ynew} 
+	#
+
+gb1612 	#15
+	rf "GB6J161216p470311_" 4.33 	0 0 		1690 1710	1475 1495	1465
+	smooth ym ynew 5
+	print "GB6J161216p470311_.qdp" {xm ynew} 
+	#
+
+gb1629 	#16
+	rf "GB6J162956p095959_" 4.97 	1556 1650 	1629 1638	1475 1495	1465
+	smooth ym ynew 5
+	print "GB6J162956p095959_.qdp" {xm ynew} 
+	#
+
+gb1648 	#17
+	rf "GB6J164856p460341_" 5.36 	0 0 		1690 1710	1475 1495	1455
+	#
+
+gb1711	#18
+	rf "GB6J171103p383016_" 3.98	1518 1531 	1690 1710	1465 1510	1465
+	#
+
+gb2357	#19
+	rf "GB6J235758p140205_" 4.25 	1554 1561 	1690 1710 	1475 1495 	1445
+	set ym = ym if(!(xm > 1445 && xm < 1460))
+	set xm = xm if(!(xm > 1445 && xm < 1460))
+	smooth ym ynew 3
+	print "GB6J235758p140205_.qdp" {xm ynew} 	
+	#
+
+gau 2	#Plotta lo spettro e le due gaussiane che meglio fittano
+	lweight 2.5
+	expand 1.3
+
+	data $1.model
+	lines 2 7
+	read par 1
+
+	set med1 = par[0]
+	set sig1 = par[1]
+	set nor1 = par[2]
+	set med2 = par[3]
+	set sig2 = par[4]
+	set nor2 = par[5]
+	
+	data $1".qdp"
+	read xm 1
+	read ym 2
+
+	set xgaus = 1350,1750,1
+	gaussian xgaus med1 sig1 nor1
+	set gaus1 = gaussian
+	gaussian xgaus med2 sig2 nor2
+	set gaus2 = gaussian
+	set gaussum = gaus1 + gaus2
+	
+	set ytemp = ym
+
+	max ytemp
+	min ytemp
+	define max (max*1.1)
+	define min (-max*0.15)
+	set ym = ym if(xm > 1350 && xm < 1700)
+	set xm = xm if(xm > 1350 && xm < 1700)
+	limits 1400 1700 $min $max
+	smooth ym ys 7
+
+	box
+
+	colours
+	ctype grey
+	ptype 10 3
+	connetti xm ys
+	ctype vermilion
+	ltype 2
+	connect xgaus gaus1
+	connect xgaus gaus2
+	ltype 0
+	ctype bluish_green
+	connect xgaus gaussum
+	ctype default
+	relocate (12000 31500)
+	label $1
+	xlabel Wavelength(\AA)
+	ylabel F_{\lambda}(\cdot10^{-17}erg s^{-1} cm^{-2} \AA^{-1})
+	#
+
+gaussian 4 	#valuta una gaussiana con x vettore, media, sigma e norm
+		set $0 = $4*EXP(-(($1-$2)/$3)**2/2)
+		#
+
+gau0011	#1
+	gau "GB6J001115p144608_" 4.96 	
+	#
+
+gau0031	#2
+	gau "GB6J003126p150729_" 4.29 	
+	#
+
+gau0121	#3
+	lweight 2.5
+	expand 1.3
+
+	data "GB6J012126p034646_.model"
+	lines 2 10
+	read par 1
+
+	set med1 = par[0]
+	set sig1 = par[1]
+	set nor1 = par[2]
+	set med2 = par[3]
+	set sig2 = par[4]
+	set nor2 = par[5]
+	set med3 = par[6]
+	set sig3 = par[7]
+	set nor3 = par[8]
+
+	data "GB6J012126p034646_.qdp"
+	read xm 1
+	read ym 2
+
+	set xgaus = 1350,1750,1
+	gaussian xgaus med1 sig1 nor1
+	set gaus1 = gaussian
+	gaussian xgaus med2 sig2 nor2
+	set gaus2 = gaussian
+	gaussian xgaus med3 sig3 nor3
+	set gaus3 = gaussian
+	set gaussum = gaus1 + gaus2 + gaus3
+	
+	set ytemp = ym
+
+	max ytemp
+	min ytemp
+	define max (max*1.1)
+	define min (-max*0.15)
+	set ym = ym if(xm > 1350 && xm < 1700)
+	set xm = xm if(xm > 1350 && xm < 1700)
+	limits 1400 1700 $min $max
+
+	box
+
+	colours
+	ctype grey
+	ptype 10 3
+	connetti xm ym
+	ctype vermilion
+	connect xgaus gaus1
+	connect xgaus gaus2
+	connect xgaus gaus3
+	ctype bluish_green
+	connect xgaus gaussum
+	ctype default
+	relocate (12000 31500)
+	label GB6J012126p034646
+	xlabel Wavelength(\AA)
+	ylabel F_{\lambda}(\cdot10^{-17}erg s^{-1} cm^{-2} \AA^{-1})
+	#
+
+gau0835	#4
+	gau "GB6J083548p182519_" 4.41 		
+	#
+
+gau0839	#5
+	gau "GB6J083945p511206_" 4.40 		
+	#
+
+gau0918 #6
+	gau "GB6J091825p063722_" 4.20	
+	#
+
+gau1021 #7
+	gau "GB6J102107p220904_" 4.26 	
+	#
+
+gau1026 #8
+	gau "GB6J102623p254255_" 5.28 	
+	#
+
+gau1325 #9
+	gau "GB6J132512p112338_" 4.42 
+	#
+
+gau1348 #10
+	gau "GB6J134811p193520_" 4.40
+	#
+
+gau1412 #11	
+	gau "GB6J141212p062408_" 4.37 	
+	#
+
+gau1430 #12
+	gau "GB6J143023p420450_" 4.72 	
+	#
+
+gau1510 #13
+	gau "GB6J151002p570256_" 4.31 
+	#
+
+gau1535 #14
+	gau "GB6J153533p025419_" 4.37
+	#
+
+gau1612 #15
+	gau "GB6J161216p470311_" 4.33 
+	#
+
+gau1629 #16
+	gau "GB6J162956p095959_" 4.97 
+	#
+
+gau1648 #17
+	gau "GB6J164856p460341_" 5.36 
+	#
+
+gau1711	#18
+	gau "GB6J171103p383016_" 3.98	
+	#
+
+gau2357	#19
+	gau "GB6J235758p140205_" 4.25 	
+	#
+
+gautoeps   #
+		dev postencap GB6J001115p144608_.eps
+		gau0011
+		dev x11
+
+		dev postencap GB6J003126p150729_.eps
+		gau0031
+		dev x11
+
+		dev postencap GB6J012126p034646_.eps
+		gau0121
+		dev x11
+
+		dev postencap GB6J083548p182519_.eps
+		gau0835
+		dev x11
+
+		dev postencap GB6J083945p511206_.eps
+		gau0839
+		dev x11
+
+		dev postencap GB6J091825p063722_.eps
+		gau0918
+		dev x11
+
+		dev postencap GB6J102107p220904_.eps
+		gau1021
+		dev x11
+
+		dev postencap GB6J102623p254255_.eps
+		gau1026
+		dev x11
+
+		dev postencap GB6J132512p112338_.eps
+		gau1325
+		dev x11
+
+		dev postencap GB6J134811p193520_.eps
+		gau1348
+		dev x11
+
+		dev postencap GB6J141212p062408_.eps
+		gau1412
+		dev x11
+
+		dev postencap GB6J143023p420450_.eps
+		gau1430
+		dev x11
+
+		dev postencap GB6J151002p570256_.eps
+		gau1510
+		dev x11
+
+		dev postencap GB6J153533p025419_.eps
+		gau1535
+		dev x11
+
+		dev postencap GB6J161216p470311_.eps
+		gau1612
+		dev x11
+
+		dev postencap GB6J162956p095959_.eps
+		gau1629
+		dev x11
+
+		dev postencap GB6J164856p460341_.eps
+		gau1648
+		dev x11
+
+		dev postencap GB6J171103p383016_.eps
+		gau1711
+		dev x11
+
+		dev postencap GB6J235758p140205_.eps
+		gau2357
+		dev x11
+	#
+
+connetti 2 	#
+		set n = dimen($1)
+		set ics = $1
+		set ips = $2 
+		set xpippo = {0.0 0.0}
+		set ypippo = {0.0 0.0}
+		do i = 0, n - 2 {
+			if((ics[$i + 1] - ics[$i]) < 5) {
+				set xpippo[0] = ics[$i]
+				set xpippo[1] = ics[$i + 1]
+				set ypippo[0] = ips[$i]
+				set ypippo[1] = ips[$i + 1]
+				connect xpippo ypippo
+			}
+		}
+		#
+
+calcolasigma 1	#
+		data $1".model"
+		lines 2 7
+		read par 1
+
+		set med1 = par[0]
+		set sig1 = par[1]
+		set nor1 = par[2]
+		set med2 = par[3]
+		set sig2 = par[4]
+		set nor2 = par[5]
+
+		set xgaus = 1350,1750,1
+		gaussian xgaus med1 sig1 nor1
+		set gaus1 = gaussian
+		gaussian xgaus med2 sig2 nor2
+		set gaus2 = gaussian
+		set gaussum = gaus1 + gaus2
+		set num = 0
+		set num2 = 0
+		set den = 0
+		do i=0,399 {set num = num + xgaus[$i]**3*gaussum[$i]
+			    set den = den + xgaus[$i]*gaussum[$i]
+			    set num2 = num2 + xgaus[$i]**2*gaussum[$i]
+			   }
+		set mean = num2/den
+		set var = num/den - mean**2
+		set $0 = sqrt(var)*299792/1549
+		#
+
+calcolafwhm 1	#
+		data $1".model"
+		lines 2 7
+		read par 1
+
+		set med1 = par[0]
+		set sig1 = par[1]
+		set nor1 = par[2]
+		set med2 = par[3]
+		set sig2 = par[4]
+		set nor2 = par[5]
+
+		set xgaus = 1350,1750,0.1
+		gaussian xgaus med1 sig1 nor1
+		set gaus1 = gaussian
+		gaussian xgaus med2 sig2 nor2
+		set gaus2 = gaussian
+		set gaussum = gaus1 + gaus2
+
+		max gaussum
+		set gmax = max
+		set x = xgaus if(gaussum >= gmax/2) 
+		max x
+		min x
+		set xmax = max
+		set xmin = min
+		set $0 = (xmax-xmin)*299792/1549
+		#
+
+calcolalumrig 2	#
+		data $1".model"
+		lines 2 7
+		read par 1
+		set z = $2
+
+		set med1 = par[0]
+		set sig1 = par[1]
+		set nor1 = par[2]
+		set med2 = par[3]
+		set sig2 = par[4]
+		set nor2 = par[5]
+
+		set xgaus = 1350,1750,1
+		gaussian xgaus med1 sig1 nor1
+		set gaus1 = gaussian
+		gaussian xgaus med2 sig2 nor2
+		set gaus2 = gaussian
+		set gaussum = gaus1 + gaus2
+		set integrale = 0
+		do i = 1,399 {set integrale = integrale + gaussum[$i]}
+		set integrale = integrale*1e-17
+		lumom integrale z 1
+		set $0 = lomega
+		set lomega = 0
+		#
+
+calcola1350 5	#
+		set xback1 = 1435
+		set xback2 = $3		
+		set xback3 = $4
+		set xback4 = $5
+		set z = $2
+		data $1"spect.txt"
+		read x 1 
+		read y 2
+		set x = x/(1 + z)
+		set y = y*(1 + z)
+		set yt = y if(x >= 1435 && x <= 1710)
+		set xt = x if(x >= 1435 && x <= 1710)
+		smooth yt ys 3
+
+		set xb = xt if((xt > xback1 && xt < xback2) || ( xt > xback3 && xt < xback4))
+		set yb = ys if((xt > xback1 && xt < xback2) || ( xt > xback3 && xt < xback4))
+		lsq xb yb xt yf k
+
+		set x = 1350
+		interp2 xt yf x flux
+		set flux1350 = flux*1350*1e-17
+		lumom flux1350 $2 1 
+
+		set $0 = (10**(lomega-44))
+		#
+
+calcolaMsig 2	#
+		set sig = $1
+		set lum	= $2
+		set massa = 10**6.73*(sig*0.001)**2*(lum)**0.53
+		#
+
+calcolaMserr 5 	#
+		set v = $1
+		set lamlum = $2
+		set verr = $3
+		set lumerr = $4
+		set M = $5
+		set M1 = lg(M)
+		set v = v*1549/299792
+		set a1 = (2*verr/v)
+		set b1 = (0.53*lumerr/lamlum)**(2)
+		set err1 = sqrt(a1**2 + b1**2)
+
+		set Mmax = lg(1 + err1)
+		set Mmin = lg(1 - err1)		
+		#
+
+calcolaMfwhm 2	#
+		set fw = $1
+		set lum	= $2
+		set massa = 10**6.66*(fw*0.001)**2*(lum)**0.53
+		#
+
+calcolaMferr 5 	#
+		set v = $1
+		set lamlum = $2
+		set verr = $3
+		set lumerr = $4
+		set M = $5
+		set M2 = lg(M)
+		set v = v*1549/299792
+		set a = (2*verr/v)
+		set b = (0.53*lumerr/lamlum)**(2)
+		set err2 = sqrt(a**2 + b**2)
+
+		set Mmax = lg(1 + err2)
+		set Mmin = lg(1 - err2)	
+		#
+
+calcolaerrLc 5	#
+		set xback1 = 1435
+		set xback2 = $3		
+		set xback3 = $4
+		set xback4 = $5
+		set z = $2
+		data $1"spect.txt"
+		read x 1 
+		read y 2
+		set x = x/(1 + z)
+		set y = y*(1 + z)
+		set yt = y if(x >= 1435 && x <= 1710)
+		set xt = x if(x >= 1435 && x <= 1710)
+		smooth yt ys 3
+
+		set xb = xt if((xt > xback1 && xt < xback2) || ( xt > $4 && xt < $5))
+		set yb = ys if((xt > xback1 && xt < xback2) || ( xt > $4 && xt < $5))
+		lsq xb yb x yf k
+		
+		set yl = y if(x >= 1340 && x <= 1360)
+		set xl = x if(x >= 1340 && x <= 1360)
+
+		set n = DIMEN(xl)
+		set somma = 0
+		set var = 0
+		do i = 0,(n - 1) {set somma = somma + yl[$i]}
+		set somma = somma/n
+		do i = 0,(n - 1) {set var = var + (somma-yl[$i])**2}
+		set var = var/n
+		set dev = sqrt(var)
+
+		set errflux1350 = dev*1350*1e-17
+		lumom errflux1350 $2 1 
+		set $0 = (10**(lomega-44))
+		#
+
+calcola 	#
+		SET DIMEN(sigma) = 19
+		SET DIMEN(fwhm) = 19
+		SET DIMEN(lumriga) = 19
+		SET DIMEN(lum1350) = 19
+		SET DIMEN(errlumc) = 19
+		SET DIMEN(M_sigma) = 19
+		SET DIMEN(errM_sigmat) = 19
+		SET DIMEN(errM_sigmab) = 19
+		SET DIMEN(M_FWHM) = 19
+		SET DIMEN(errM_fwhmt) = 19
+		SET DIMEN(errM_fwhmb) = 19
+		SET DIMEN(fluxes) = 19
+		SET redshift = {4.96 4.29 4.13 4.41 4.40 4.20 4.26 5.28 4.42 4.40 4.37 4.72 4.31 4.37 4.33 4.97 5.36 3.98 4.25}
+		SET names = {GB6J001115p144608_ GB6J003126p150729_ GB6J012126p034646_ GB6J083548p182519_ GB6J083945p511206_ GB6J091825p063722_ GB6J102107p220904_ GB6J102623p254255_ GB6J132512p112338_ GB6J134811p193520_ GB6J141212p062408_ GB6J143023p420450_ GB6J151002p570256_ GB6J153533p025419_ GB6J161216p470311_ GB6J162956p095959_ GB6J164856p460341_ GB6J171103p383016_ GB6J235758p140205_}
+		
+		data finaldata.txt
+		read errsigma 2	
+		read errfwhm  4
+		read errlumr  6
+
+		define index (0)
+		define num(names[$index])
+		calcolasigma $num
+		calcolafwhm  $num
+		calcolalumrig  $num redshift[$index]
+		calcola1350 $num redshift[$index] 	1465	1610 1640 
+		calcolaerrLc $num redshift[$index] 	1465	1610 1640
+		set sigma[$index] = calcolasigma
+		set fwhm[$index] = calcolafwhm
+		set lumriga[$index] = calcolalumrig
+		set lum1350[$index] = calcola1350
+		set fluxes[$index] = flux
+		set errlumc[$index] = calcolaerrLc
+		calcolaMsig sigma[$index] lum1350[$index]
+		set M_sigma[$index] = massa
+		calcolaMfwhm fwhm[$index] lum1350[$index]
+		set M_FWHM[$index] = massa
+		calcolaMserr sigma[$index] lum1350[$index] errsigma[$index] errlumc[$index] M_sigma[$index]
+		set errM_sigmat[$index] = Mmax
+		set errM_sigmab[$index] = Mmin
+		calcolaMferr fwhm[$index] lum1350[$index] errfwhm[$index] errlumc[$index] M_FWHM[$index]
+		set errM_fwhmt[$index] = Mmax
+		set errM_fwhmb[$index] = Mmin
+
+		
+		define index (1)
+		define num(names[$index])
+		calcolasigma $num
+		calcolafwhm  $num
+		calcolalumrig  $num redshift[$index]
+		calcola1350 $num redshift[$index] 	1455 	1620 1625	
+		calcolaerrLc $num redshift[$index] 	1455 	1620 1625
+		set sigma[$index] = calcolasigma
+		set fwhm[$index] = calcolafwhm
+		set lumriga[$index] = calcolalumrig
+		set lum1350[$index] = calcola1350
+		set fluxes[$index] = flux
+		set errlumc[$index] = calcolaerrLc
+		calcolaMsig sigma[$index] lum1350[$index]
+		set M_sigma[$index] = massa
+		calcolaMfwhm fwhm[$index] lum1350[$index]
+		set M_FWHM[$index] = massa
+		calcolaMserr sigma[$index] lum1350[$index] errsigma[$index] errlumc[$index] M_sigma[$index]
+		set errM_sigmat[$index] = Mmax
+		set errM_sigmab[$index] = Mmin
+		calcolaMferr fwhm[$index] lum1350[$index] errfwhm[$index] errlumc[$index] M_FWHM[$index]
+		set errM_fwhmt[$index] = Mmax
+		set errM_fwhmb[$index] = Mmin	
+		
+		define index (2)
+		define num(names[$index])
+
+		data GB6J012126p034646_.model
+		lines 2 10
+		read par 1
+
+		set med1 = par[0]
+		set sig1 = par[1]
+		set nor1 = par[2]
+		set med2 = par[3]
+		set sig2 = par[4]
+		set nor2 = par[5]
+		set med3 = par[6]
+		set sig3 = par[7]
+		set nor3 = par[8]
+
+		set xgaus = 1350,1750,1
+		gaussian xgaus med1 sig1 nor1
+		set gaus1 = gaussian
+		gaussian xgaus med2 sig2 nor2
+		set gaus2 = gaussian
+		gaussian xgaus med3 sig3 nor3
+		set gaus3 = gaussian
+		set gaussum = gaus1 + gaus2 + gaus3
+		set num = 0
+		set num2 = 0
+		set den = 0
+		set integrale = 0
+		do i=0,399 {set num = num + xgaus[$i]**3*gaussum[$i]
+			    set den = den + xgaus[$i]*gaussum[$i]
+			    set num2 = num2 + xgaus[$i]**2*gaussum[$i]
+			    set integrale = integrale + gaussum[$i]
+			   }
+		set integrale = integrale*1e-17
+		lumom integrale z 1
+		set mean = num2/den
+		set var = num/den - mean**2
+		max gaussum
+		set gmax = max
+		set x = xgaus if(gaussum >= gmax/2) 
+		max x
+		min x
+		set xmax = max
+		set xmin = min
+		set sigma[$index] = sqrt(var)*299792/1549
+		calcola1350 $num redshift[$index] 	1465  	1690 1710	
+		calcolaerrLc $num redshift[$index] 	1465  	1690 1710
+		set fwhm[$index] = (xmax-xmin)*299792/1549
+		set lumriga[$index] = lomega
+		set lum1350[$index] = calcola1350
+		set fluxes[$index] = flux
+		set errlumc[$index] = calcolaerrLc
+		calcolaMsig sigma[$index] lum1350[$index]
+		set M_sigma[$index] = massa
+		calcolaMfwhm fwhm[$index] lum1350[$index]
+		set M_FWHM[$index] = massa
+		calcolaMserr sigma[$index] lum1350[$index] errsigma[$index] errlumc[$index] M_sigma[$index]
+		set errM_sigmat[$index] = Mmax
+		set errM_sigmab[$index] = Mmin
+		calcolaMferr fwhm[$index] lum1350[$index] errfwhm[$index] errlumc[$index] M_FWHM[$index]
+		set errM_fwhmt[$index] = Mmax
+		set errM_fwhmb[$index] = Mmin		
+				
+		define index (3)
+		define num(names[$index])
+		calcolasigma $num
+		calcolafwhm  $num
+		calcolalumrig  $num redshift[$index]
+		calcola1350 $num redshift[$index] 	1465	 1690 1710
+		calcolaerrLc $num redshift[$index] 	1465	 1690 1710
+		set sigma[$index] = calcolasigma
+		set fwhm[$index] = calcolafwhm
+		set lumriga[$index] = calcolalumrig
+		set lum1350[$index] = calcola1350
+		set fluxes[$index] = flux
+		set errlumc[$index] = calcolaerrLc
+		calcolaMsig sigma[$index] lum1350[$index]
+		set M_sigma[$index] = massa
+		calcolaMfwhm fwhm[$index] lum1350[$index]
+		set M_FWHM[$index] = massa
+		calcolaMserr sigma[$index] lum1350[$index] errsigma[$index] errlumc[$index] M_sigma[$index]
+		set errM_sigmat[$index] = Mmax
+		set errM_sigmab[$index] = Mmin
+		calcolaMferr fwhm[$index] lum1350[$index] errfwhm[$index] errlumc[$index] M_FWHM[$index]
+		set errM_fwhmt[$index] = Mmax
+		set errM_fwhmb[$index] = Mmin	
+						
+		define index (4)
+
+		define num(names[$index])
+		calcolasigma $num
+		calcolafwhm  $num
+		calcolalumrig  $num redshift[$index]
+		calcola1350 $num redshift[$index] 	1465	1675 1695	
+		calcolaerrLc $num redshift[$index] 	1465	1675 1695	
+		set sigma[$index] = calcolasigma
+		set fwhm[$index] = calcolafwhm
+		set lumriga[$index] = calcolalumrig
+		set lum1350[$index] = calcola1350
+		set fluxes[$index] = flux
+		set errlumc[$index] = calcolaerrLc
+		calcolaMsig sigma[$index] lum1350[$index]
+		set M_sigma[$index] = massa
+		calcolaMfwhm fwhm[$index] lum1350[$index]
+		set M_FWHM[$index] = massa
+		calcolaMserr sigma[$index] lum1350[$index] errsigma[$index] errlumc[$index] M_sigma[$index]
+		set errM_sigmat[$index] = Mmax
+		set errM_sigmab[$index] = Mmin
+		calcolaMferr fwhm[$index] lum1350[$index] errfwhm[$index] errlumc[$index] M_FWHM[$index]
+		set errM_fwhmt[$index] = Mmax
+		set errM_fwhmb[$index] = Mmin	
+						
+		define index (5)
+
+		define num(names[$index])
+		calcolasigma $num
+		calcolafwhm  $num
+		calcolalumrig  $num redshift[$index]
+		calcola1350 $num redshift[$index]	1465 	1690 1705
+		calcolaerrLc $num redshift[$index]	1465 	1690 1705
+		set sigma[$index] = calcolasigma
+		set fwhm[$index] = calcolafwhm
+		set lumriga[$index] = calcolalumrig
+		set lum1350[$index] = calcola1350
+		set fluxes[$index] = flux
+		set errlumc[$index] = calcolaerrLc
+		calcolaMsig sigma[$index] lum1350[$index]
+		set M_sigma[$index] = massa
+		calcolaMfwhm fwhm[$index] lum1350[$index]
+		set M_FWHM[$index] = massa
+		calcolaMserr sigma[$index] lum1350[$index] errsigma[$index] errlumc[$index] M_sigma[$index]
+		set errM_sigmat[$index] = Mmax
+		set errM_sigmab[$index] = Mmin
+		calcolaMferr fwhm[$index] lum1350[$index] errfwhm[$index] errlumc[$index] M_FWHM[$index]
+		set errM_fwhmt[$index] = Mmax
+		set errM_fwhmb[$index] = Mmin	
+						
+		define index (6)
+
+		define num(names[$index])
+		calcolasigma $num
+		calcolafwhm  $num
+		calcolalumrig  $num redshift[$index]
+		calcola1350 $num redshift[$index] 	1465 	1690 1710	
+		calcolaerrLc $num redshift[$index] 	1465 	1690 1710
+		set sigma[$index] = calcolasigma
+		set fwhm[$index] = calcolafwhm
+		set lumriga[$index] = calcolalumrig
+		set lum1350[$index] = calcola1350
+		set fluxes[$index] = flux
+		set errlumc[$index] = calcolaerrLc
+		calcolaMsig sigma[$index] lum1350[$index]
+		set M_sigma[$index] = massa
+		calcolaMfwhm fwhm[$index] lum1350[$index]
+		set M_FWHM[$index] = massa
+		calcolaMserr sigma[$index] lum1350[$index] errsigma[$index] errlumc[$index] M_sigma[$index]
+		set errM_sigmat[$index] = Mmax
+		set errM_sigmab[$index] = Mmin
+		calcolaMferr fwhm[$index] lum1350[$index] errfwhm[$index] errlumc[$index] M_FWHM[$index]
+		set errM_fwhmt[$index] = Mmax
+		set errM_fwhmb[$index] = Mmin	
+						
+		define index (7)
+
+		define num(names[$index])
+		calcolasigma $num
+		calcolafwhm  $num
+		calcolalumrig  $num redshift[$index]
+		calcola1350 $num redshift[$index] 	1465	1570 1580
+		calcolaerrLc $num redshift[$index] 	1465	1570 1580
+		set sigma[$index] = calcolasigma
+		set fwhm[$index] = calcolafwhm
+		set lumriga[$index] = calcolalumrig
+		set lum1350[$index] = calcola1350
+		set fluxes[$index] = flux
+		set errlumc[$index] = calcolaerrLc
+		calcolaMsig sigma[$index] lum1350[$index]
+		set M_sigma[$index] = massa
+		calcolaMfwhm fwhm[$index] lum1350[$index]
+		set M_FWHM[$index] = massa
+		calcolaMserr sigma[$index] lum1350[$index] errsigma[$index] errlumc[$index] M_sigma[$index]
+		set errM_sigmat[$index] = Mmax
+		set errM_sigmab[$index] = Mmin
+		calcolaMferr fwhm[$index] lum1350[$index] errfwhm[$index] errlumc[$index] M_FWHM[$index]
+		set errM_fwhmt[$index] = Mmax
+		set errM_fwhmb[$index] = Mmin	
+						
+		define index (8)
+
+		define num(names[$index])
+		calcolasigma $num
+		calcolafwhm  $num
+		calcolalumrig  $num redshift[$index]
+		calcola1350 $num redshift[$index] 	1465	1690 1710
+		calcolaerrLc $num redshift[$index] 	1465	1690 1710
+		set sigma[$index] = calcolasigma
+		set fwhm[$index] = calcolafwhm
+		set lumriga[$index] = calcolalumrig
+		set lum1350[$index] = calcola1350
+		set fluxes[$index] = flux
+		set errlumc[$index] = calcolaerrLc
+		calcolaMsig sigma[$index] lum1350[$index]
+		set M_sigma[$index] = massa
+		calcolaMfwhm fwhm[$index] lum1350[$index]
+		set M_FWHM[$index] = massa
+		calcolaMserr sigma[$index] lum1350[$index] errsigma[$index] errlumc[$index] M_sigma[$index]
+		set errM_sigmat[$index] = Mmax
+		set errM_sigmab[$index] = Mmin
+		calcolaMferr fwhm[$index] lum1350[$index] errfwhm[$index] errlumc[$index] M_FWHM[$index]
+		set errM_fwhmt[$index] = Mmax
+		set errM_fwhmb[$index] = Mmin	
+						
+		define index (9)
+
+		define num(names[$index])
+		calcolasigma $num
+		calcolafwhm  $num
+		calcolalumrig  $num redshift[$index]
+		calcola1350 $num redshift[$index]	1465 	1690 1710
+		calcolaerrLc $num redshift[$index]	1465 	1690 1710	
+		set sigma[$index] = calcolasigma
+		set fwhm[$index] = calcolafwhm
+		set lumriga[$index] = calcolalumrig
+		set lum1350[$index] = calcola1350
+		set fluxes[$index] = flux
+		set errlumc[$index] = calcolaerrLc
+		calcolaMsig sigma[$index] lum1350[$index]
+		set M_sigma[$index] = massa
+		calcolaMfwhm fwhm[$index] lum1350[$index]
+		set M_FWHM[$index] = massa
+		calcolaMserr sigma[$index] lum1350[$index] errsigma[$index] errlumc[$index] M_sigma[$index]
+		set errM_sigmat[$index] = Mmax
+		set errM_sigmab[$index] = Mmin
+		calcolaMferr fwhm[$index] lum1350[$index] errfwhm[$index] errlumc[$index] M_FWHM[$index]
+		set errM_fwhmt[$index] = Mmax
+		set errM_fwhmb[$index] = Mmin	
+						
+		define index (10)
+
+		define num(names[$index])
+		calcolasigma $num
+		calcolafwhm  $num
+		calcolalumrig  $num redshift[$index]
+		calcola1350 $num redshift[$index] 	1465 	1660 1680
+		calcolaerrLc $num redshift[$index] 	1465 	1660 1680
+		set sigma[$index] = calcolasigma
+		set fwhm[$index] = calcolafwhm
+		set lumriga[$index] = calcolalumrig
+		set lum1350[$index] = calcola1350
+		set fluxes[$index] = flux
+		set errlumc[$index] = calcolaerrLc
+		calcolaMsig sigma[$index] lum1350[$index]
+		set M_sigma[$index] = massa
+		calcolaMfwhm fwhm[$index] lum1350[$index]
+		set M_FWHM[$index] = massa
+		calcolaMserr sigma[$index] lum1350[$index] errsigma[$index] errlumc[$index] M_sigma[$index]
+		set errM_sigmat[$index] = Mmax
+		set errM_sigmab[$index] = Mmin
+		calcolaMferr fwhm[$index] lum1350[$index] errfwhm[$index] errlumc[$index] M_FWHM[$index]
+		set errM_fwhmt[$index] = Mmax
+		set errM_fwhmb[$index] = Mmin	
+						
+		define index (11)
+
+		define num(names[$index])
+		calcolasigma $num
+		calcolafwhm  $num
+		calcolalumrig  $num redshift[$index]
+		calcola1350 $num redshift[$index] 	1465	1690 1710
+		calcolaerrLc $num redshift[$index] 	1465	1690 1710
+		set sigma[$index] = calcolasigma
+		set fwhm[$index] = calcolafwhm
+		set lumriga[$index] = calcolalumrig
+		set lum1350[$index] = calcola1350
+		set fluxes[$index] = flux
+		set errlumc[$index] = calcolaerrLc
+		calcolaMsig sigma[$index] lum1350[$index]
+		set M_sigma[$index] = massa
+		calcolaMfwhm fwhm[$index] lum1350[$index]
+		set M_FWHM[$index] = massa
+		calcolaMserr sigma[$index] lum1350[$index] errsigma[$index] errlumc[$index] M_sigma[$index]
+		set errM_sigmat[$index] = Mmax
+		set errM_sigmab[$index] = Mmin
+		calcolaMferr fwhm[$index] lum1350[$index] errfwhm[$index] errlumc[$index] M_FWHM[$index]
+		set errM_fwhmt[$index] = Mmax
+		set errM_fwhmb[$index] = Mmin	
+						
+		define index (12)
+
+		define num(names[$index])
+		calcolasigma $num
+		calcolafwhm  $num
+		calcolalumrig  $num redshift[$index]
+		calcola1350 $num redshift[$index] 	1465	1690 1710
+		calcolaerrLc $num redshift[$index] 	1465	1690 1710
+		set sigma[$index] = calcolasigma
+		set fwhm[$index] = calcolafwhm
+		set lumriga[$index] = calcolalumrig
+		set lum1350[$index] = calcola1350
+		set fluxes[$index] = flux
+		set errlumc[$index] = calcolaerrLc
+		calcolaMsig sigma[$index] lum1350[$index]
+		set M_sigma[$index] = massa
+		calcolaMfwhm fwhm[$index] lum1350[$index]
+		set M_FWHM[$index] = massa
+		calcolaMserr sigma[$index] lum1350[$index] errsigma[$index] errlumc[$index] M_sigma[$index]
+		set errM_sigmat[$index] = Mmax
+		set errM_sigmab[$index] = Mmin
+		calcolaMferr fwhm[$index] lum1350[$index] errfwhm[$index] errlumc[$index] M_FWHM[$index]
+		set errM_fwhmt[$index] = Mmax
+		set errM_fwhmb[$index] = Mmin	
+						
+		define index (13)
+
+		define num(names[$index])
+		calcolasigma $num
+		calcolafwhm  $num
+		calcolalumrig  $num redshift[$index]
+		calcola1350 $num redshift[$index] 	1465	1690 1710
+		calcolaerrLc $num redshift[$index] 	1465	1690 1710
+		set sigma[$index] = calcolasigma
+		set fwhm[$index] = calcolafwhm
+		set lumriga[$index] = calcolalumrig
+		set lum1350[$index] = calcola1350
+		set fluxes[$index] = flux
+		set errlumc[$index] = calcolaerrLc
+		calcolaMsig sigma[$index] lum1350[$index]
+		set M_sigma[$index] = massa
+		calcolaMfwhm fwhm[$index] lum1350[$index]
+		set M_FWHM[$index] = massa
+		calcolaMserr sigma[$index] lum1350[$index] errsigma[$index] errlumc[$index] M_sigma[$index]
+		set errM_sigmat[$index] = Mmax
+		set errM_sigmab[$index] = Mmin
+		calcolaMferr fwhm[$index] lum1350[$index] errfwhm[$index] errlumc[$index] M_FWHM[$index]
+		set errM_fwhmt[$index] = Mmax
+		set errM_fwhmb[$index] = Mmin	
+						
+		define index (14)
+
+		define num(names[$index])
+		calcolasigma $num
+		calcolafwhm  $num
+		calcolalumrig  $num redshift[$index]
+		calcola1350 $num redshift[$index] 	1465 	1690 1710	
+		calcolaerrLc $num redshift[$index] 	1465 	1690 1710
+		set sigma[$index] = calcolasigma
+		set fwhm[$index] = calcolafwhm
+		set lumriga[$index] = calcolalumrig
+		set lum1350[$index] = calcola1350
+		set fluxes[$index] = flux
+		set errlumc[$index] = calcolaerrLc
+		calcolaMsig sigma[$index] lum1350[$index]
+		set M_sigma[$index] = massa
+		calcolaMfwhm fwhm[$index] lum1350[$index]
+		set M_FWHM[$index] = massa
+		calcolaMserr sigma[$index] lum1350[$index] errsigma[$index] errlumc[$index] M_sigma[$index]
+		set errM_sigmat[$index] = Mmax
+		set errM_sigmab[$index] = Mmin
+		calcolaMferr fwhm[$index] lum1350[$index] errfwhm[$index] errlumc[$index] M_FWHM[$index]
+		set errM_fwhmt[$index] = Mmax
+		set errM_fwhmb[$index] = Mmin	
+						
+		define index (15)
+
+		define num(names[$index])
+		calcolasigma $num
+		calcolafwhm  $num
+		calcolalumrig  $num redshift[$index]
+		calcola1350 $num redshift[$index] 	1465 	1629 1638
+		calcolaerrLc $num redshift[$index] 	1465 	1629 1638
+		set sigma[$index] = calcolasigma
+		set fwhm[$index] = calcolafwhm
+		set lumriga[$index] = calcolalumrig
+		set lum1350[$index] = calcola1350
+		set fluxes[$index] = flux
+		set errlumc[$index] = calcolaerrLc
+		calcolaMsig sigma[$index] lum1350[$index]
+		set M_sigma[$index] = massa
+		calcolaMfwhm fwhm[$index] lum1350[$index]
+		set M_FWHM[$index] = massa
+		calcolaMserr sigma[$index] lum1350[$index] errsigma[$index] errlumc[$index] M_sigma[$index]
+		set errM_sigmat[$index] = Mmax
+		set errM_sigmab[$index] = Mmin
+		calcolaMferr fwhm[$index] lum1350[$index] errfwhm[$index] errlumc[$index] M_FWHM[$index]
+		set errM_fwhmt[$index] = Mmax
+		set errM_fwhmb[$index] = Mmin	
+						
+		define index (16)
+
+		define num(names[$index])
+		calcolasigma $num
+		calcolafwhm  $num
+		calcolalumrig  $num redshift[$index]
+		calcola1350 $num redshift[$index] 	1455	1690 1710
+		calcolaerrLc $num redshift[$index] 	1455	1690 1710
+		set sigma[$index] = calcolasigma
+		set fwhm[$index] = calcolafwhm
+		set lumriga[$index] = calcolalumrig
+		set lum1350[$index] = calcola1350
+		set fluxes[$index] = flux
+		set errlumc[$index] = calcolaerrLc
+		calcolaMsig sigma[$index] lum1350[$index]
+		set M_sigma[$index] = massa
+		calcolaMfwhm fwhm[$index] lum1350[$index]
+		set M_FWHM[$index] = massa
+		calcolaMserr sigma[$index] lum1350[$index] errsigma[$index] errlumc[$index] M_sigma[$index]
+		set errM_sigmat[$index] = Mmax
+		set errM_sigmab[$index] = Mmin
+		calcolaMferr fwhm[$index] lum1350[$index] errfwhm[$index] errlumc[$index] M_FWHM[$index]
+		set errM_fwhmt[$index] = Mmax
+		set errM_fwhmb[$index] = Mmin	
+						
+		define index (17)
+
+		define num(names[$index])
+		calcolasigma $num
+		calcolafwhm  $num
+		calcolalumrig  $num redshift[$index]
+		calcola1350 $num redshift[$index]	1465	1690 1710
+		calcolaerrLc $num redshift[$index]	1465	1690 1710	
+		set sigma[$index] = calcolasigma
+		set fwhm[$index] = calcolafwhm
+		set lumriga[$index] = calcolalumrig
+		set lum1350[$index] = calcola1350
+		set fluxes[$index] = flux
+		set errlumc[$index] = calcolaerrLc
+		calcolaMsig sigma[$index] lum1350[$index]
+		set M_sigma[$index] = massa
+		calcolaMfwhm fwhm[$index] lum1350[$index]
+		set M_FWHM[$index] = massa
+		calcolaMserr sigma[$index] lum1350[$index] errsigma[$index] errlumc[$index] M_sigma[$index]
+		set errM_sigmat[$index] = Mmax
+		set errM_sigmab[$index] = Mmin
+		calcolaMferr fwhm[$index] lum1350[$index] errfwhm[$index] errlumc[$index] M_FWHM[$index]
+		set errM_fwhmt[$index] = Mmax
+		set errM_fwhmb[$index] = Mmin	
+						
+		define index (18)
+
+		define num(names[$index])
+		calcolasigma $num
+		calcolafwhm  $num
+		calcolalumrig  $num redshift[$index]
+		calcola1350 $num redshift[$index] 	1445 	1690 1710 
+		calcolaerrLc $num redshift[$index] 	1445 	1690 1710 
+		set sigma[$index] = calcolasigma
+		set fwhm[$index] = calcolafwhm
+		set lumriga[$index] = calcolalumrig
+		set lum1350[$index] = calcola1350
+		set fluxes[$index] = flux
+		set errlumc[$index] = calcolaerrLc
+		calcolaMsig sigma[$index] lum1350[$index]
+		set M_sigma[$index] = massa
+		calcolaMfwhm fwhm[$index] lum1350[$index]
+		set M_FWHM[$index] = massa
+		calcolaMserr sigma[$index] lum1350[$index] errsigma[$index] errlumc[$index] M_sigma[$index]
+		set errM_sigmat[$index] = Mmax
+		set errM_sigmab[$index] = Mmin
+		calcolaMferr fwhm[$index] lum1350[$index] errfwhm[$index] errlumc[$index] M_FWHM[$index]
+		set errM_fwhmt[$index] = Mmax
+		set errM_fwhmb[$index] = Mmin
+
+		set test = lum1350
+
+		set Lbol = lum1350*4
+		set Lbolmax = sqrt((lum1350*5 - Lbol)**2+errlumc**2)
+		set Lbolmin = sqrt((lum1350*3.5 - Lbol)**2+errlumc**2)
+		set Ledds = M_sigma*2*0.00000063
+		set Leddf = M_FWHM*2*0.00000063
+		set eddratiof = Lbol/Leddf
+		set eddratios = Lbol/Ledds
+		set eddrmaxf = (Lbolmax+Lbol)/Leddf - eddratiof
+		set eddrminf = (Lbolmin+Lbol)/Leddf - eddratiof
+		set eddrmaxs = (Lbolmax+Lbol)/Ledds - eddratios
+		set eddrmins = (Lbolmin+Lbol)/Ledds - eddratios	
+
+		#'&$' = 		&\$
+		#'$&$' = 		\$&\$
+		#'\pm' = 		\\pm
+		#'\substack{+' =	\\substack{+
+		#'\\' = 		\\\\
+		#'}$&$' = 		}\$&\$
+		#'$\\' = 		\$\\\\
+
+		set errsigma = errsigma*299792/1549
+		set errfwhm = errfwhm*299792/1549
+
+
+		#print "TOTALE.txt" '%s&\$%.2f\$ &\$%.0f\\pm%.0f\$ &\$%.0f\\pm%.0f\$ &\$%.3f\\pm%.3f\$ &\$%.3f\\pm%.3f\$ &\$%.2f\\substack{+%.2f\\\\%.2f}\$ &\$%.2f\\substack{+%.2f\\\\%.2f}\$ &\$%.2f\\substack{+%.2f\\\\%.2f}\$ &\$%.2f\\substack{+%.2f\\\\%.2f}\$ &\$%.2f\\substack{+%.2f\\\\%.2f}\$\\\\ \n\n' {names redshift sigma errsigma fwhm errfwhm lumriga errlumr lum1350 errlumc Lbol Lbolmax Lbolmin M_sigma errM_sigmat errM_sigmab M_FWHM errM_fwhmt errM_fwhmb eddratios eddrmaxs eddrmins eddratiof eddrmaxf eddrminf}
+		print "daticompl.txt" {redshift sigma errsigma fwhm errfwhm lumriga errlumr lum1350 errlumc Lbol Lbolmax Lbolmin M_sigma errM_sigmat errM_sigmab M_FWHM errM_fwhmt errM_fwhmb eddratios eddrmaxs eddrmins eddratiof eddrmaxf eddrminf}
+
+
+		# Conversioni in scala Log
+
+		set errlumr = errlumr*1e-17
+		lumom errlumr redshift 1
+		
+		print { errlumc lum1350}
+		set errlumct = lg(1+errlumc/lum1350)
+		set errlumcb = lg(1-errlumc/lum1350)
+
+		set errlumr = lomega/(lumriga)
+		
+		set Lbolmax = lg(Lbol + Lbolmax) - lg(Lbol)
+		set Lbolmin = lg(Lbol) - lg(Lbol + Lbolmin)
+
+		set Lbol = lg(lum1350*4) + 44
+		set lum1350 = lg(lum1350) + 44
+		set M_sigma = lg(M_sigma)
+		set M_FWHM  = lg(M_FWHM)
+
+		#print "TOTALELOG.txt" '%s& \$%.2f\$ &\$%.0f\\pm%.0f\$ &\$%.0f\\pm%.0f\$ &\$%.3f\\pm%.3f\$ &\$%.2f\\pm%.2f\$ &\$%.2f\\substack{+%.2f\\\\%.2f}\$ &\$%.2f\\substack{+%.2f\\\\%.2f}\$ &\$%.2f\\substack{+%.2f\\\\%.2f}\$ &\$%.2f\\substack{+%.2f\\\\%.2f}\$ &\$%.2f\\substack{+%.2f\\\\%.2f}\$\\\\ \n\n' {names redshift sigma errsigma fwhm errfwhm lumriga errlumr lum1350 errlumc Lbol Lbolmax Lbolmin M_sigma errM_sigmat errM_sigmab M_FWHM errM_fwhmt errM_fwhmb eddratios eddrmaxs eddrmins eddratiof eddrmaxf eddrminf}
+		print "TOTALELOGM.txt" '%s& \$%.2f\$ &\$%.0f\\pm%.0f\$ &\$%.2f\\substack{+%.2f\\\\%.2f}\$ &\$%.2f\\substack{+%.2f\\\\%.2f}\$ \\\\ \n\n' {names redshift fwhm errfwhm lum1350 errlumct errlumcb M_FWHM errM_fwhmt errM_fwhmb}
+		print "daticompllog.txt" {redshift sigma errsigma fwhm errfwhm lumriga errlumr lum1350 errlumct errlumcb Lbol Lbolmax Lbolmin M_sigma errM_sigmat errM_sigmab M_FWHM errM_fwhmt errM_fwhmb eddratios eddrmaxs eddrmins eddratiof eddrmaxf eddrminf}
+		#
+
+lumom 3	# based on the approximate formulae for Dlum
+	# presented in Pen 1999, ApJS, 120, 49
+	# for LAMBDA COSMOLOGY in FLAT UNIVERSE
+	# Omega_matter + Omega_Lambda =0 
+	# Here we define Omega (== Omega_matter)	
+     
+	set z=$2
+	set mflux=$1
+	set alpha=$3
+	set c=2.9979e5
+	set H0=70
+	set Omega = 0.3
+	set pig=3.14159
+
+	dl_omega H0 Omega z
+
+	set dl=dl*3.085678e4
+	set k =(1+z)**(alpha-1)
+	set lum40=mflux*(dl**2)*4*pig*k
+
+	set lomega = lg(lum40)+ 40
+
+	#print {mflux z alpha lum40 lomega}
+	#
+dl_omega 3 # $1=H0 matter $2=Omega $3=z
+	# => Dlum in Mpc
+
+	set H0=$1
+	set Omega=$2
+	set z=$3
+	set c=2.9979e5
+
+	nuu Omega 1
+	set nu1=nu
+	
+	set x=1/(1+z)
+	nuu Omega x
+	set nuz=nu
+
+	set dl = (c/H0)*(1+z)*(nu1 - nuz)
+	set dlmpc=dl
+	#print {dl}	
+	#
+nuu 2	#  $1=Omega $2=A
+
+	set a=$2
+	set Omega=$1
+
+	set s3=(1-Omega)/Omega
+	set s2=s3**(2/3)
+	set s1=s3**(1/3)	
+	set s4=s1**4
+
+	set a2=a*a
+	set a3=a*a*a
+	set a4=a*a*a*a
+
+	set nu = 2*sqrt(s3 + 1)*((1/a4) -0.1540*(s1/a3) + 0.4304*(s2/a2) + 0.19097*(s3/a) + 0.066941*s4)**(-1/8)
+	#
+
+MsigVSfwhm	#
+		lweight 3
+		expand 1.6
+		ticksize -1 10 -1 10
+		data "daticompllog.txt"
+		read fwhm 4
+		read Msig 13
+		read Msigerrs 14
+		read Msigerri 15
+		read Mfwhm 16
+		read Mfwhmerrs 17
+		read Mfwhmerri 18
+
+		limits 8 10.5 8 10.5
+		set x = 0
+		set y = 0
+		set x = {0 20}
+		set y = x
+		box 	
+		ptype 5 3
+		ltype 2
+		connect x y
+		ltype 0
+		points Mfwhm Msig
+
+		errorbar Mfwhm Msig Mfwhmerrs 1
+		errorbar Mfwhm Msig Msigerrs 2
+		errorbar Mfwhm Msig Mfwhmerri 1
+		errorbar Mfwhm Msig Msigerri 2
+		
+		ticksize 0 0 0 0
+		xlabel M_{FWHM}(M_{\odot})
+ 		ylabel M_{\sigma}(M_{\odot})
+ 		relocate (13500 31500)
+ 		label M_{\sigma} vs. M_{FWHM}		
+		#
+
+sigVSfwhm #
+		lweight 2.5
+		expand 1.3
+		data "daticompl.txt"
+		read sig 2
+		read errsig 3
+		read fwhm 4
+		read errfwhm 5
+
+		set x = 0
+		set y = 0
+		ctype red
+		set x = {0 10000}
+		set y = x
+		connect x y
+		set x = {0 10000}
+		set y = 2*x
+		connect x y
+		set x = {0 10000}
+		set y = 2.35*x
+		connect x y
+		ctype default
+
+		limits 1000 10000 1000 10000
+		box 	
+		ptype 5 3
+		
+		points sig fwhm
+		errorbar sig fwhm  errsig/2 1
+		errorbar sig fwhm  errsig/2 3
+		errorbar sig fwhm  errfwhm/2 2
+		errorbar sig  fwhm errfwhm/2 4
+		xlabel \sigma(km s^{-1})
+ 		ylabel FWHM(km s^{-1})
+ 		relocate (14500 31500)
+ 		label \sigma - FWHM
+	#
+
+sigVSfwhmlog #
+		lweight 3
+		expand 1.6
+		data "daticompl.txt"
+		read sig 2
+		read sigerr 3
+		read fwhm 4
+		read fwhmerr 5
+
+		set fwhmerrSup = lg(fwhm + fwhmerr) - lg(fwhm)
+		set fwhmerrInf = lg(fwhm) - lg(fwhm - fwhmerr) 
+		set sigerrSup = lg(sig + sigerr) - lg(sig)
+		set sigerrInf = lg(sig) - lg(sig - sigerr)
+		set sig = lg(sig)
+		set fwhm = lg(fwhm)
+
+		set xs = 2,5
+		set ys = xs + lg(2.355)
+		limits 3.2 4 3.2 4
+		lrange_denney2
+		box 	
+		ptype 5 3		
+		points sig fwhm 
+		ltype 2
+		connect xs ys
+		ltype 0
+		errorbar sig fwhm  fwhmerrSup 2
+		errorbar sig fwhm  fwhmerrInf 4
+		errorbar sig fwhm  sigerrSup 1
+		errorbar sig fwhm  sigerrInf 3
+		xlabel Log\sigma(km s^{-1})
+ 		ylabel LogFWHM(km s^{-1})
+ 		relocate (12000 31500)
+ 		label Log\sigma - LogFWHM		
+	#
+
+boot 2	#
+	gau $1 $2
+
+	#Calcola e sottrae il modello ai dati reali, lasciando il rumore, che viene stimato e usato per generare punti casuali
+
+	interp2 xgaus gaussum xm ymodel
+	set resid = ym - ymodel
+	stats resid med sig k
+	set med = $med 
+	set sig = $sig
+	
+	set ymock = ymodel - ymodel
+	set n = DIMEN(ymock)
+	define Nsim (1000)
+	set DIMEN(sigmarray) = $Nsim
+	set DIMEN(fwhmarray) = $Nsim
+	set DIMEN(lumiarray) = $Nsim
+	do j = 0,$Nsim-1{
+		do i= 0,n-1 { randomg ymodel[$i] sig 1 
+				set ymock[$i] = x
+		}
+		print mock.qdp {xm ymock}
+	  	#!\cp $1.model modnew.mod
+		set pippo = 'model @$1.model'
+		print + "mock.qdp" {pippo}
+		set pippo = 'fit 1000'
+		print + "mock.qdp" {pippo}
+		set pippo = 'wmodel mock.mod'
+		print + "mock.qdp" {pippo}
+		!\rm mock.mod
+		!qdp mock.qdp
+		data "mock.mod"
+		lines 2 7
+		read par 1
+	
+		set med1 = par[0]
+		set sig1 = par[1]
+		set nor1 = par[2]
+		set med2 = par[3]
+		set sig2 = par[4]
+		set nor2 = par[5]
+
+		set xgaus = 1350,1750,1
+		gaussian xgaus med1 sig1 nor1
+		set gaus1 = gaussian
+		gaussian xgaus med2 sig2 nor2
+		set gaus2 = gaussian
+		set gaussum = gaus1 + gaus2
+	
+		# Calcolo sigma
+	
+		set num = 0
+		set num2 = 0
+		set den = 0
+		do i=0,399 {set num = num + xgaus[$i]**3*gaussum[$i]
+			    set den = den + xgaus[$i]*gaussum[$i]
+			    set num2 = num2 + xgaus[$i]**2*gaussum[$i]
+			   }
+		set mean = num2/den
+		set var = num/den - mean**2
+		set sigmarray[$j] = sqrt(var)
+		
+		# Calcolo la luminosita di riga
+		
+		set integrale = 0
+		do i = 1,399 {set integrale = integrale + gaussum[$i]}
+		set lumiarray[$j] = integrale
+		
+		#Calcolo fwhm
+	
+		set xgaus = 1350,1750,0.1
+		gaussian xgaus med1 sig1 nor1
+		set gaus1 = gaussian
+		gaussian xgaus med2 sig2 nor2
+		set gaus2 = gaussian
+		set gaussum = gaus1 + gaus2
+		max gaussum
+		set gmax = max
+		set x = xgaus if(gaussum >= gmax/2) 
+		max x
+		min x
+		set xmax = max
+		set xmin = min
+		set fwhmarray[$j] = xmax-xmin
+		}
+
+		stats sigmarray mediasigma sigmasigma ksigma
+		stats fwhmarray mediafwhm sigmafwhm kfwhm
+		stats lumiarray medialumi sigmalumi klumi
+		set mediasigma = $mediasigma
+		set sigmasigma = $sigmasigma
+		set mediafwhm = $mediafwhm
+		set sigmafwhm = $sigmafwhm
+		set medialumi = $medialumi
+		set sigmalumi = $sigmalumi
+		print + alldataMCA.txt {sigmarray fwhmarray lumiarray}
+		print + allerrorsA.txt {mediasigma sigmasigma mediafwhm sigmafwhm medialumi sigmalumi}
+		#print $1_data.txt {mediasigma sigmasigma mediafwhm sigmafwhm medialumi sigmalumi}
+	#
+
+
+randomg 3     	# choose N(=$3) points from a gaussian distribution
+         	# with mean=$1 and sigma=$2
+         	#$1=mean, $2=sigma, $3=number of points
+
+         	set r1=random($3)
+         	set r2=random($3)
+         	set z1=(sqrt(-2*ln(r1)))*cos(2*3.14*r2)
+         	set x=$2*z1+$1
+
+         	#
+
+boot0011	#1
+ 	boot "GB6J001115p144608_" 4.96
+	#
+
+boot0031	#2
+	boot "GB6J003126p150729_" 4.29 	
+	#
+
+boot0121	#3
+	data "GB6J012126p034646_.model"
+	lines 2 10
+	read par 1
+
+	set med1 = par[0]
+	set sig1 = par[1]
+	set nor1 = par[2]
+	set med2 = par[3]
+	set sig2 = par[4]
+	set nor2 = par[5]
+	set med3 = par[6]
+	set sig3 = par[7]
+	set nor3 = par[8]
+
+	data "GB6J012126p034646_.qdp"
+	read xm 1
+	read ym 2
+
+	set xgaus = 1350,1750,1
+	gaussian xgaus med1 sig1 nor1
+	set gaus1 = gaussian
+	gaussian xgaus med2 sig2 nor2
+	set gaus2 = gaussian
+	gaussian xgaus med3 sig3 nor3
+	set gaus3 = gaussian
+	set gaussum = gaus1 + gaus2 + gaus3
+	
+	set ytemp = ym
+
+	max ytemp
+	min ytemp
+	define max (max*1.1)
+	define min (-max*0.15)
+	set ym = ym if(xm > 1350 && xm < 1700)
+	set xm = xm if(xm > 1350 && xm < 1700)
+
+	#Calcola e sottrae il modello ai dati reali, lasciando il rumore, che viene stimato e usato per generare punti casuali
+
+	interp2 xgaus gaussum xm ymodel
+	set resid = ym - ymodel
+	stats resid med sig k
+	set med = $med 
+	set sig = $sig
+	
+	set ymock = ymodel - ymodel
+	set n = DIMEN(ymock)
+	define Nsim (1000)
+	set DIMEN(sigmarray) = $Nsim
+	set DIMEN(fwhmarray) = $Nsim
+	set DIMEN(lumiarray) = $Nsim
+	do j = 0,$Nsim-1{
+		do i= 0,n-1 { randomg ymodel[$i] sig 1 
+				set ymock[$i] = x
+		}
+		print mock.qdp {xm ymock}
+		set pippo = 'model @GB6J012126p034646_.model'
+		print + "mock.qdp" {pippo}
+		set pippo = 'fit 1000'
+		print + "mock.qdp" {pippo}
+		set pippo = 'wmodel mock.mod'
+		print + "mock.qdp" {pippo}
+		!\rm mock.mod
+		!qdp mock.qdp
+		data "mock.mod"
+		lines 2 10
+		read par 1
+	
+		set med1 = par[0]
+		set sig1 = par[1]
+		set nor1 = par[2]
+		set med2 = par[3]
+		set sig2 = par[4]
+		set nor2 = par[5]
+		set med3 = par[6]
+	 	set sig3 = par[7]
+		set nor3 = par[8]
+	
+		set xgaus = 1350,1750,1
+		gaussian xgaus med1 sig1 nor1
+		set gaus1 = gaussian
+		gaussian xgaus med2 sig2 nor2
+		set gaus2 = gaussian
+		gaussian xgaus med3 sig3 nor3
+		set gaus3 = gaussian
+		set gaussum = gaus1 + gaus2 + gaus3
+	
+		# Calcolo sigma
+	
+		set num = 0
+		set num2 = 0
+		set den = 0
+		do i=0,399 {set num = num + xgaus[$i]**3*gaussum[$i]
+			    set den = den + xgaus[$i]*gaussum[$i]
+			    set num2 = num2 + xgaus[$i]**2*gaussum[$i]
+			   }
+		set mean = num2/den
+		set var = num/den - mean**2
+		set sigmarray[$j] = sqrt(var)
+
+		# Calcolo la luminosita di riga
+		
+		set integrale = 0
+		do i = 1,399 {set integrale = integrale + gaussum[$i]}
+		set lumiarray[$j] = integrale	
+
+		#Calcolo fwhm
+
+		set xgaus = 1350,1750,0.1
+		gaussian xgaus med1 sig1 nor1
+		set gaus1 = gaussian
+		gaussian xgaus med2 sig2 nor2
+		set gaus2 = gaussian
+		gaussian xgaus med3 sig3 nor3
+		set gaus3 = gaussian
+		set gaussum = gaus1 + gaus2 + gaus3
+		max gaussum
+		set gmax = max
+		set x = xgaus if(gaussum >= gmax/2) 
+		max x
+		min x
+		set xmax = max
+		set xmin = min
+		set fwhmarray[$j] = xmax-xmin
+		}
+
+		stats sigmarray mediasigma sigmasigma ksigma
+		stats fwhmarray mediafwhm sigmafwhm kfwhm
+		stats lumiarray medialumi sigmalumi klumi
+		set mediasigma = $mediasigma
+		set sigmasigma = $sigmasigma
+		set mediafwhm = $mediafwhm
+		set sigmafwhm = $sigmafwhm
+		set medialumi = $medialumi
+		set sigmalumi = $sigmalumi
+		print + alldataMCA.txt {sigmarray fwhmarray lumiarray}
+		print + allerrorsA.txt {mediasigma sigmasigma mediafwhm sigmafwhm medialumi sigmalumi}		
+		#print "GB6J012126p034646__data.txt" {mediasigma sigmasigma mediafwhm sigmafwhm medialumi sigmalumi}
+	#
+
+boot0835	#4
+	boot "GB6J083548p182519_" 4.41 		
+	#
+
+boot0839	#5
+	boot "GB6J083945p511206_" 4.40 		
+	#
+
+boot0918 	#6
+	boot "GB6J091825p063722_" 4.20	
+	#
+
+boot1021 	#7
+	boot "GB6J102107p220904_" 4.26 	
+	#
+
+boot1026 	#8
+	boot "GB6J102623p254255_" 5.28 	
+	#
+
+boot1325 	#9
+	boot "GB6J132512p112338_" 4.42 
+	#
+
+boot1348 	#10
+	boot "GB6J134811p193520_" 4.40
+	#
+
+boot1412 	#11	
+	boot "GB6J141212p062408_" 4.37 	
+	#
+
+boot1430 	#12
+	boot "GB6J143023p420450_" 4.72 	
+	#
+
+boot1510 	#13
+	boot "GB6J151002p570256_" 4.31 
+	#
+
+boot1535 	#14
+	boot "GB6J153533p025419_" 4.37
+	#
+
+boot1612 	#15
+	boot "GB6J161216p470311_" 4.33 
+	#
+
+boot1629 	#16
+	boot "GB6J162956p095959_" 4.97 
+	#
+
+boot1648 	#17
+	boot "GB6J164856p460341_" 5.36 
+	#
+
+boot1711	#18
+	boot "GB6J171103p383016_" 3.98	
+	#
+
+boot2357	#19
+	boot "GB6J235758p140205_" 4.25 	
+	#
+
+bootall #
+	boot0011
+	boot0031
+	boot0121
+	boot0835
+	#boot0839
+	#boot0918
+	#boot1021
+	#boot1026
+	#boot1325
+	#boot1348
+	#boot1412	
+	#boot1430
+	#boot1510
+	#boot1535	
+	#boot1612
+	#boot1629
+	#boot1648
+	#boot1711
+	#boot2357
+	#
+
+istog 	#
+	data alldataMCA.txt
+	lines 4009 5010
+	read x 1
+	stats x media errore normaliz
+	set media = $media
+	set errore = $errore
+	set min = media - 3*errore
+	set max = media + 3*errore
+	get_hist x Bin Hist min max 1.5
+	limits Bin Hist
+	histogram Bin Hist
+	box
+	xlabel \sigma(\AA)
+	ylabel \#counts
+	relocate (10500 31500)
+ 	label 1000 randomly generated \sigma s
+	#
+
+eddVSz # 
+	lweight 3
+	expand 1.6
+	data "daticompllog.txt"
+	read edd 19
+	read max 20
+	read min 21
+	read redshift 1
+	limits 3.9 5.5 -1.5 1
+	box 	
+	ptype 5 3
+		
+	set max = lg(edd + max) - lg(edd)
+	set min = lg(edd) - lg(edd + min)
+	set edd = lg(edd)
+
+	points redshift edd
+	errorbar redshift edd max 2
+	errorbar redshift edd min 4
+	xlabel Redshift (z)
+ 	ylabel Log(\lambda_{edd})
+ 	relocate (12000 31500)
+ 	label Log(\lambda_{edd}) vs redshift
+	#
+
+eddVSm #
+	lweight 3
+	expand 1.6
+	ticksize -1 10 0 0
+	data "daticompllog.txt"
+	read edd 19
+	read max 20
+	read min 21
+	read massa 13
+	read mmax 14
+	read mmin 15
+	limits 8 10.5 -1.1 0.5
+	box 	
+	ptype 5 3
+
+	set eddSup = lg(edd + max) - lg(edd)
+	set eddInf = lg(edd) - lg(edd + min) 
+	set edd = lg(edd)
+	
+	points massa edd
+	errorbar massa edd eddSup 2
+	errorbar massa edd eddInf 2
+	errorbar massa edd mmax 1
+	errorbar massa edd mmin 1
+
+	xlabel Mass M_{\odot}
+ 	ylabel Log\lambda_{edd}
+ 	relocate (10000 31500)
+ 	label Eddington ratio vs M_{BH}
+	ticksize 0 0 0 0
+	#
+
+mVSz	#
+	lweight 2.5
+	expand 1.3
+	ticksize 0 0 -1 10 
+	data "daticompl.txt"
+	read redshift 1
+	read massa 13
+	read merr 14
+	limits 3.9 5.5 8 10.5
+	box 	
+	ptype 5 3
+
+	set mSup = lg(massa + merr) - lg(massa)
+	set mInf = lg(massa) - lg(massa - merr) 
+	set massa = lg(massa)
+	
+	points redshift massa
+	errorbar redshift massa mSup 2
+	errorbar redshift massa mInf 4
+
+	xlabel Redshift(z)
+	ylabel Mass (M_{\odot})
+ 	relocate (13000 31500)
+ 	label M_{BH} vs redshift
+	ticksize 0 0 0 0
+	#
+
+LvsL 	#
+	lweight 2.5
+	expand 1.3
+	data "daticompllog.txt"
+	read Lriga 6
+	read Lrigaerr 7
+	read L1350 8
+	read L1350err 9
+
+	set x = {1 100}
+	set y = 0.87*x + 4.42
+
+	set L1350 = 10**L1350
+	set Lriga = 10**Lriga
+	set Lrigaerr = 10**Lrigaerr
+	set L1350err = 10**L1350err
+	set Lrigamax = lg(Lriga + Lrigaerr) - lg(Lriga)
+	set Lrigamin = lg(Lriga) - lg(Lriga-Lrigaerr)
+	set L1350max = lg(L1350 + L1350err) - lg(L1350)
+	set L1350min = lg(L1350) - lg(L1350-L1350err)	
+	set Lriga = lg(Lriga) + 44
+	set L1350 = lg(L1350) + 44
+
+	limits 45 48 43 46
+	box
+	ptype 5 3
+	points L1350 Lriga
+	connect x y
+	errorbar L1350 Lriga L1350max 1
+	errorbar L1350 Lriga L1350min 3
+	errorbar L1350 Lriga Lrigamax 2
+	errorbar L1350 Lriga Lrigamin 4
+
+
+
+	#data daticompllog.txt
+	#read Lriga 6
+	#read L1350 8
+	#limits 45 48 43 46
+	#box
+	#ptype 5 3
+	#points L1350 Lriga
+	#set x = {1 100}
+	#set y = 0.87*x + 4.42
+	#connect x y
+
+	#
+
+graphtoeps #
+	dev postencap sigVSfwhm.eps
+	sigVSfwhm
+	dev x11
+
+	dev postencap MsigVSfwhm.eps
+	MsigVSfwhm
+	dev x11
+
+	dev postencap Edd_sigmaVSz.eps
+	eddVSz
+	dev x11
+
+	dev postencap Edd_sigmaVSmass.eps
+	eddVSm
+	dev x11
+
+	dev postencap MassVSz.eps
+	mVSz
+	dev x11
+		
+	dev postencap sigVSfwhmDenney.eps
+	sigVSfwhmlog
+	dev x11
+	#
+
+lrange_denney #
+     colours
+     set x=3,4,0.1
+     set med_ratio=1.05
+     set sig_ratio=0.27
+     set sup=med_ratio+2*sig_ratio
+     set inf=med_ratio-2*sig_ratio
+
+     set y=lg(med_ratio)+x
+     set sup=(med_ratio+2*sig_ratio)
+     set inf=(med_ratio-2*sig_ratio)
+     set ysup=lg(sup)+x
+     set yinf=lg(inf)+x
+
+     ltype 0
+     ctype light_blue
+     shd x ysup yinf 1
+     ctype default
+     connect x y
+     #
+
+lrange_denney2 #
+     colours
+     set x=3,4,0.1
+     set med_ratio=1.05
+     set logsig=0.27
+     set y=x+lg(1.05)
+     set ysup=logsig+y
+     set yinf=-logsig+y
+
+     ltype 0
+     ctype light_blue
+     shd x ysup yinf 1
+     ctype default
+     connect x y
+          #
+
+shd 4   # $1=x $2=y up $3=y down $4=how close the lines
+     set x=$1
+     set yp=$2
+     set ym=$3
+
+         set nmax=dimen(x)
+         set ymm=ym-ym
+         set xx=x-x
+         do i=0,nmax-1 {set ymm[$i]=ym[nmax-$i-1] set xx[$i]=x[nmax-$i-1]}
+         shade $4 (x CONCAT xx) (yp concat ymm)
+
+         #
+
+devolve # 
+	lweight 2.5
+	expand 1.3
+	ticksize 0 0 -1 10
+	data "daticompllog.txt"
+	read M 13
+	set M = 10**M
+	set times = {1164 1391 1456 1345 1349 1427 1403 1076 1341 1349 1360 1237 1383 1360 1375 1161 1056 1522 1407}
+	exp01rev M times
+	set Mi = Mf
+	limits 0 2 0 11
+	box
+	ptype 5 3
+	do j = 16, 16{
+		exp01 Mi[$j] times[$j]
+		set mass_t = lg(Mf)
+		set i = 0, max
+		set i = i/1000
+		connect i mass_t
+	}
+
+	#
+
+exp01rev 2	#
+	set M0 = $1
+	set time = $2
+	set time = 500 - time
+	set Mf = M0*exp(9*time/450)
+	#
+
+exp01 2	#
+	set M0 = $1
+	set time = $2
+	set max = time - 500
+	define dim (max)
+	set DIMEN(Mf) = $dim
+	do i = 0,max{
+		set Mf[$i] = M0*exp(9*$i/450)
+	}
+	#
+
+exp02rev 2	#
+	set M0 = $1
+	set time = $2
+	set time = 500 - time
+	set Mf = M0*exp(7*time/1350)
+	#
+
+exp02 1 	#
+	set M0 = $1
+	set DIMEN(Mf) = 1000
+	do i = 0,999{
+		set Mf[$i] = M0*exp(7*$i/1350)
+	}
+	#
+
+linemassl #
+	data daticompllog.txt
+	read Lriga 6
+	read fwhm 4
+	set logM = lg(4.6)+5 + 0.6*(Lriga - 42) + lg((fwhm/1000)**2)
+	set Lriga = 10**(Lriga-42)
+	set M = 4.6*10**5*Lriga**0.6*(fwhm/1000)**2
+	set M = lg(M)
+	#
+
+sigtonoise # 
+	calcola
+	SET names = {GB6J001115p144608_ GB6J003126p150729_ GB6J012126p034646_ GB6J083548p182519_ GB6J083945p511206_ GB6J091825p063722_ GB6J102107p220904_ GB6J102623p254255_ GB6J132512p112338_ GB6J134811p193520_ GB6J141212p062408_ GB6J143023p420450_ GB6J151002p570256_ GB6J153533p025419_ GB6J161216p470311_ GB6J162956p095959_ GB6J164856p460341_ GB6J171103p383016_ GB6J235758p140205_}
+	set DIMEN(sigmas) = 19
+	set DIMEN(StoN) = 19
+	set sigma = sigma
+	set errsiga = errsigma
+	do ind = 0,18{
+		define num(names[$ind])
+		gau $num redshifts[$ind]
+		interp2 xgaus gaussum xm ymodel
+		set resid = ym - ymodel
+		stats resid med sig k
+		set stddev = $sig
+		set StoN[$ind] = fluxes[$ind]/stddev
+		set sigmas[$ind] = stddev
+	}
+	set errrel = errsigma/sigma
+	erase
+	lweight 2.5
+	expand 1.3
+	limits 1 18 0.01 0.6
+	box 
+	ptype 5 3
+	points StoN errrel
+	print S2N.txt {names StoN}
+	#
+
+shenist #
+	data Shen.txt
+	read zshen 1
+	read Mshen 2
+	read errMshen 3
+	read eddshen 4
+
+	data daticompllog.txt
+	read z 1
+	read M 16
+	read edd 22
+	set edd = lg(edd)
+
+	set dimshen = 80
+	set dim = 5
+
+	dev postencap Shen_mass.eps
+	get_hist M Bin Hist 7.8 11 0.3
+	set Hist = Hist/dim
+	limits Bin Hist
+	histogram Bin Hist
+	get_hist Mshen Bin Hist 7.8 11 0.1
+	set Hist = Hist/dimshen
+	ksdat M Mshen
+	ctype red
+	histogram Bin Hist
+	ctype default
+	box
+	xlabel LogM_{BH}
+	ylabel Normalized counts
+	relocate (12500 31500)
+	label Mass distributions 
+	dev x11
+
+	set dimshen = 113
+	set dim = 6
+
+	dev postencap Shen_edd.eps
+	get_hist edd Bin Hist -2 1 0.2
+	set Hist = Hist/dim
+	limits Bin Hist
+	histogram Bin Hist
+	get_hist eddshen Bin Hist -2 1 0.1
+	set Hist = Hist/dimshen
+	ksdat edd eddshen
+	ctype red
+	histogram Bin Hist
+	ctype default
+	box
+	xlabel Log\lambda_{edd}
+	ylabel Normalized counts
+	relocate (12500 31500)
+	label \lambda_{edd} distributions 
+	dev x11
+	#
+
+MvsMshen #
+	data shenclass.txt
+	read Mshen 9
+	read Mshenerr 10
+	data Mcompare.txt
+	read M 16
+	read max 17
+	read min 18
+	
+	points M Mshen
+	set x = {0 11}
+	set y = x
+	connect x y
+	limits 8 11 8 11
+	errorbar M Mshen Mshenerr 2
+	errorbar M Mshen Mshenerr 4	
+	errorbar M Mshen max 1
+	errorbar M Mshen min 1	
+	box
+	#
+
+ksdat 2	# 1= vettore dati(1), 2= vettore dati(2)
+	smirnov2 $1 $2 valo	
+	set valo=$valo
+	prob_KS valo proba
+	set proba=$proba
+	print {valo proba}
+	#
+
+shenisttot #
+	data all_shen.txt
+	read zshen 3
+	read Mshen 4
+	read eddshen 5
+
+	data daticompllog.txt
+	read z 1
+	read M 16
+	read edd 22
+	set edd = lg(edd)
+
+	set dimshen = 105785
+	set dim = 19
+
+	dev postencap all_shen_mass.eps
+	get_hist M Bin Hist 6 11 0.3
+	set Hist = Hist/dim
+	limits Bin Hist
+	histogram Bin Hist
+	get_hist Mshen Bin Hist 6 11 0.3
+	set Hist = Hist/dimshen
+	ksdat M Mshen
+	ctype red
+	histogram Bin Hist
+	ctype default
+	box
+	xlabel LogM_{BH}
+	ylabel fraction
+	relocate (12500 31500)
+	label Mass distributions 
+	dev x11
+
+	dev postencap all_shen_edd.eps
+	get_hist edd Bin Hist -2 1 0.2
+	set Hist = Hist/dim
+	limits Bin Hist
+	histogram Bin Hist
+	get_hist eddshen Bin Hist -2 1 0.2
+	set Hist = Hist/dimshen
+	ksdat edd eddshen
+	ctype red
+	histogram Bin Hist
+	ctype default
+	box
+	xlabel Log\lambda_{edd}
+	ylabel fraction
+	relocate (12500 31500)
+	label \lambda_{edd} distributions 
+	dev x11
+#
+
+istogr #
+	ctype default
+	ticksize 0 0 0 0
+	lweight 3
+	data daticompllog.txt
+	read M 13
+
+	dev postencap masses.eps
+	get_hist M Bin Hist 8 10.5 0.2
+	limits 8.3 10.5 0 7
+	histogram Bin Hist
+	box
+	xlabel LogM_{BH}
+	ylabel Counts
+	relocate (12500 31500)
+	label Mass distribution
+	lweight 1
+	dev x11
+	#

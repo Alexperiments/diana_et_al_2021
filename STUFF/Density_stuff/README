@@ -1,0 +1,97 @@
+########################################################################################################################################
+
+Operazioni effettuabili con la macro rest_frame.sm (vedi sotto per dettagli):
+
+########################################################################################################################################
+
+	1) Preparazione degli spettri con la macro 'rf' (rest-frame, sottrazione continuo e maschere)
+	2) Plottare su file eps gli spettri preparati con rf, macro 'toeps'
+	3) Plottare CIV e best-fit a due gaussiane con 'gau'
+	4) Plottare su file eps i best fit preparati con gau, macro 'gautoeps'
+	5) Calcolare sigma, FWHM, lum in riga e continuo, masse e edd ratio con i relativi errori partendo dai best-fit, macro 'calcola'
+	6) Plottare masse calcolate con la sigma vs masse FWHM, macro 'MsigVSMfwhm'
+	7) Plottare le misure della sigma vs fwhm, macro 'sigVSfwhm'
+	8) Calcolare l'errore sui parametri di best-fit con un metodo montecarlo, macro 'boot'
+	10)Calcolare segnale/rumore delle sorgenti con 'sigtonoise'
+
+1) rf prende in input 9 parametri:
+
+   $ rf  nome_spettro_txt  redshift  mask1  mask2  background1 background2  mask3  mask4  background3
+
+   nome_spettro_txt: nome del file senza estensione
+   redshift: z della sorgente
+   mask1 e mask2: inizio e fine di un intervallo da mascherare (nel rest-frame) se si vuole omettere mettere 0 0
+   background1 background2: inizio e fine del secondo intervallo su cui stimare il continuo, sull'intervallo standard a volte c'era qualche  	problema
+   mask3 e mask4: come mask1 e mask2
+   background3: estremo finale dell'intervallo di sinistra del continuo, l'estremo iniziale e' fissato perche' non dava problemi
+
+   OUTPUT: un grafico in due pannelli.
+   NB: questa macro e' utilizzabile piu' agilemente invocando le macro per singoli oggetti che seguono la sintassi gb#### con #### le prime  	quattro cifre dell'oggetto studiato, la macro contiene gia i parametri adatti.
+
+2) toeps stampa in formato eps tutti gli spettri preparabili con rf
+
+3) gau prende come input 2 paramtri>
+   $ gau  nome_modello  redshift (in realta' non serve, e' un residuo da togliere
+
+   la macro puo' essere gestita con le macro per i singoli oggetti gau#### (####: prime 4 cifre dell'oggetto)
+
+4) come 2)
+
+5) calcola non prende parametri in input
+   utilizzando diverse macro usiliare calcola:
+   -secondo momento del modello a piu' gaussiane con 'calcolasigma' che prende come input il nome del modello di best-fit
+   -fwhm della linea con 'calcolafwhm' prendendo come input il nome del modello di best-fit
+   -calcola la luminosita' della riga del CIV integrandola, con 'calcolalumriga' che prende come input il nome del modello di best-fit e il redshift
+   -calcola la luminosita' del continuo a 1350\AA con 'calcola1350' che prende 5 parametri: i 3 parametri liberi per il fit del background utilizzati nella macro 'rf', il redshift e il nome dello spettro in formato txt
+   -calcola la massa stimate con il secondo momento (Vestergaard e Peterson 2006) con 'calcolaMsig' che prende come parametri la larghezza della linea e la lum del continuo a 1350\AA
+   -calcola la massa stimate con la fwhm (Vestergaard e Peterson 2006) come sopra, con 'calcolaMfwhm'
+   -calcola gli errori relativi alle masse partendo dagli errori sui parametri di sigma, fwhm e lum1350 con le macro 'calcolaMserr' e 'calcolaMferr'
+   
+	OUTPUT: la macro produce 2 file:
+		- daticompllog.txt contiene una tabella con i risultati, le masse e le luminosita' sono in scala Log
+		- TOTALELOG.txt e' la stessa tabella ma in formato Latex
+
+
+
+########################################################################################################################################
+
+Operazioni effettuabili con la macro per_ale.sm:
+
+########################################################################################################################################
+
+	1) Creare un canvas con le estrapolazioni di Ajello(2009) e Ghisellini(2010) e il la densita' totale di SMBH in AGN con massa superiore alle 10**9 M_sol. Macro 'fig'
+	2) Plottare i lower limits trovati da Sbarrato(2015) sul canvas plottato con la 1). Macro 'SG'
+	3) Plottare i punti del campione CLASS sul canvas plottato con la 1). Macro 'CLASS'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   

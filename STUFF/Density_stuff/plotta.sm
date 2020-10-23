@@ -1,0 +1,7 @@
+pl 1	#
+	data $1
+	read x 1 
+	read y 3
+	set y = y*10e17
+	print x y
+	#

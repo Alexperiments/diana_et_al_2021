@@ -1,0 +1,12 @@
+model @std.model
+fit 1000
+Uncertain 1 1.0
+Uncertain 2 1.0
+Uncertain 3 1.0
+Uncertain 4 1.0
+Uncertain 5 1.0
+Uncertain 6 1.0
+LAbel X Wavelength
+LAbel Y Flux
+pl
+Wmodel %1%.model

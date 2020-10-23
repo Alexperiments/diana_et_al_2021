@@ -1,0 +1,1209 @@
+rf 9	# impostare gli intervalli per la rimozione del continuo, custom mask e secondo intervallo background (def: 1690-1710)
+	# 
+
+	set xback1 = 1435
+	set xback2 = $9
+	set xback3 = $5
+	set xback4 = $6
+
+	set xmask1 = $7
+	set xmask2 = $8
+	set xmask3 = 1600
+	set xmask4 = 1680
+
+	# Plot inferiore: spettro nel rest frame centrato nell'intervallo di background +- 50
+	
+	window 1 -2 1 1
+	lweight 2.5
+	expand 1.3
+	data $1"spect.txt"
+	set z = $2
+	read x 1 
+	read y 2
+	set x = x/(1 + z)
+	set y = y*(1 + z)
+	set yt = y if(x >= 1435 && x <= 1710)
+	set xt = x if(x >= 1435 && x <= 1710)
+	set y1temp = yt if(xt > 1500 && xt < 1560)
+	max y1temp
+	min y1temp
+	define max (max*1.1)
+	define min (min-min*0.1)
+	limits xt $min $max
+	smooth yt ys 3
+	box
+	xlabel \lambda (\AA)
+	relocate (1300 10500)
+	angle 90
+	label f(erg s^{-1} cm^{-2} \AA^{-1}) \times 10^{-17}
+	bgline 1435
+	bgline $9
+	bgline $5
+	bgline $6
+	
+	connetti xt ys
+	box 0 2 0 0
+
+	# Plotta il continuo da rimuovere in rosso
+
+	set xb = xt if((xt > xback1 && xt < xback2) || ( xt > $5 && xt < $6))
+	set yb = ys if((xt > xback1 && xt < xback2) || ( xt > $5 && xt < $6))
+	ctype red
+	lsq xb yb xt yf k
+	connect xt yf
+	ctype default
+
+	# Plot superiore: spettro senza continuo con intervalli mascherati
+
+	window 1 -2 1 2	
+	set ynet = ys - yf
+	set ytemp = ynet if(xt > 1520 && xt < 1558)
+	max ytemp
+	min y1temp
+	define max (max*1.1)
+	define min (-max*0.15)
+	limits xt $min $max
+	box 0 2 0 0
+
+	mask $7 $8
+	mask 1600 1680
+
+	set xm = xt if(!((xt > xmask1 && xt < xmask2) || ( xt > xmask3 && xt < xmask4)))
+	set ym = ynet if(!((xt > xmask1 && xt < xmask2) || ( xt > xmask3 && xt < xmask4)))
+	if($3 != 0 && $4 != 0) {set xm = xt if(!((xt > xmask1 && xt < xmask2) || ( xt > xmask3 && xt < xmask4)||(xt >= $3 && xt< $4)))
+				set ym = ynet if(!((xt > xmask1 && xt < xmask2) || ( xt > xmask3 && xt < xmask4)||(xt >= $3 && xt< $4)))
+				mask $3 $4
+	}
+
+	connetti xt ynet
+
+	SET DIMEN(zeros) = DIMEN(xt)
+	
+	relocate (12000 31500)
+	label $1
+
+	set yCIV = {1000 -1000}
+	set xCIV = {1549 1549}
+
+	connetti xm ym
+
+	ctype blue
+	connect xt zeros
+	ctype default
+
+	ctype green
+	connect xCIV yCIV
+	ctype default
+
+	set ym = ym if(xm > 1435 && xm < 1710)
+	set xm = xm if(xm > 1435 && xm < 1710)
+	print $1.qdp {xm ym} 
+	max yf
+	min yf
+	set areatrap = (min + max)
+	max xt
+	min xt
+	set areatrap = areatrap*(max-min)/2
+	lweight 1
+	#
+
+max 1 	# trova il massimo del vettore
+	set x = $1
+	sort {x}
+	set ntot = dimen(x)
+	define ntot (ntot)
+	set max = x[$ntot-1]
+	#
+
+min 1 	# trova il minimo del vettore
+	set x = $1
+	sort {x}
+	set min = x[0]
+	#
+
+colours # new method: using RGB codes!
+     add_ctype orange 255 165 0
+     add_ctype brown 130 90 44
+     add_ctype pink 255 204 255
+     add_ctype light_blue 204 255 255
+     add_ctype light_blue1 227 242 253
+     add_ctype light_blue2 187 222 251
+     add_ctype light_blue3 144 202 249
+     add_ctype reddish 252 192 178
+     add_ctype blueish 217 241 247
+     add_ctype greenish 242 250 140
+     add_ctype orangish 254 217 106
+     add_ctype grey 180 180 180
+     add_ctype grey_dark 160 160 160
+     add_ctype green2 192 255 62
+     #
+shd 4   # $1=x $2=y up $3=y down $4=how close the lines
+     set ax=$1
+     set ayp=$2
+     set aym=$3
+
+         set nmax=dimen(ax)
+         set ymm=aym-aym
+         set xx=ax-ax
+         do i=0,nmax-1 {set ymm[$i]=aym[nmax-$i-1] set xx[$i]=ax[nmax-$i-1]}
+         shade $4 (ax CONCAT xx) (ayp concat ymm)
+
+        #
+
+mask 2	# maschera con uno shading l'intervallo passato come parametri
+	set xshade = {0 0}
+	set xshade[0] = $1
+	set xshade[1] = $2
+	set ysup = {1000 1000}
+	set yinf = {-1000 -1000}
+	angle 45
+	colours
+	ctype grey
+	shd xshade ysup yinf 5
+	ctype default
+	angle 0
+	#
+	
+bgline 1 #	disegna rette verticali per segnalare gli intervalli di background
+	set bgline = {-1000 1000}
+	set xbg = {0 0}
+	set xbg[0] = $1
+	set xbg[1] = $1
+	ctype red
+	connect xbg bgline
+	ctype default
+	#
+
+toeps   #
+		dev postencap GB6J001115+144608_spect.eps
+		gb0011
+		dev x11
+
+		dev postencap GB6J003126+150729_spect.eps
+		gb0031
+		dev x11
+
+		dev postencap GB6J012126+034646_spect.eps
+		gb0121
+		dev x11
+
+		dev postencap GB6J083548+182519_spect.eps
+		gb0835
+		dev x11
+
+		dev postencap GB6J083945+511206_spect.eps
+		gb0839
+		dev x11
+
+		dev postencap GB6J091825+063722_spect.eps
+		gb0918
+		dev x11
+
+		dev postencap GB6J102107+220904_spect.eps
+		gb1021
+		dev x11
+
+		dev postencap GB6J102623+254255_spect.eps
+		gb1026
+		dev x11
+
+		dev postencap GB6J132512+112338_spect.eps
+		gb1325
+		dev x11
+
+		dev postencap GB6J134811+193520_spect.eps
+		gb1348
+		dev x11
+
+		dev postencap GB6J141212+062408_spect.eps
+		gb1412
+		dev x11
+
+		dev postencap GB6J143023+420450_spect.eps
+		gb1430
+		dev x11
+
+		dev postencap GB6J151002+570256_spect.eps
+		gb1510
+		dev x11
+
+		dev postencap GB6J153533+025419_spect.eps
+		gb1535
+		dev x11
+
+		dev postencap GB6J161216+470311_spect.eps
+		gb1612
+		dev x11
+
+		dev postencap GB6J162956+095959_spect.eps
+		gb1629
+		dev x11
+
+		dev postencap GB6J164856+460341_spect.eps
+		gb1648
+		dev x11
+
+		dev postencap GB6J171103+383016_spect.eps
+		gb1711
+		dev x11
+
+		dev postencap GB6J235758+140205_spect.eps
+		gb2357
+		dev x11
+	#	
+						
+
+gb0011	#1
+	rf "GB6J001115+144608_" 4.96 	1570 1600 	1610 1640 	1475 1495	1465
+	#
+
+gb0031	#2
+	rf "GB6J003126+150729_" 4.29 	0 0 		1620 1625	1475 1501	1455
+	#
+
+gb0121	#3
+	rf "GB6J012126+034646_" 4.13 	1523 1525 	1690 1710	1470 1495	1465
+	#
+
+gb0835	#4
+	rf "GB6J083548+182519_" 4.41 	0 0	 	1690 1710	1475 1495	1465	
+	smooth ym ynew 7
+	print "GB6J083548+182519_.qdp" {xm ynew} 
+	#
+
+gb0839	#5
+	rf "GB6J083945+511206_" 4.40 	1518 1525 	1675 1695	1475 1495	1465	
+	#
+
+gb0918 	#6
+	rf "GB6J091825+063722_" 4.20	1508 1512 	1690 1705	1475 1495	1465
+	set ym = ym if(!(xm > 1445 && xm < 1460))
+	set xm = xm if(!(xm > 1445 && xm < 1460))
+	smooth ym ynew 5
+	print "GB6J091825+063722_.qdp" {xm ynew} 
+	#
+
+gb1021 	#7
+	rf "GB6J102107+220904_" 4.26 	1598 1682 	1690 1710	1475 1495	1465
+	#
+
+gb1026 	#8
+	rf "GB6J102623+254255_" 5.28 	1570 1580 	1570 1580	1475 1495	1465
+	smooth ym ynew 7
+	print "GB6J102623+254255_.qdp" {xm ynew} 
+	#
+
+gb1325 	#9
+	rf "GB6J132512+112338_" 4.42 	0 0 		1690 1710	1475 1495	1465
+	#
+
+gb1348 	#10
+	rf "GB6J134811+193520_" 4.40	1543 1546.5 	1690 1710	1475 1495	1465	
+	smooth ym ynew 5
+	print "GB6J134811+193520_.qdp" {xm ynew} 
+	#
+
+gb1412 	#11	
+	rf "GB6J141212+062408_" 4.37 	1680 1681.6 	1660 1680	1475 1475	1465
+	smooth ym ynew 13
+	print "GB6J141212+062408_.qdp" {xm ynew} 
+	#
+
+gb1430 	#12
+	rf "GB6J143023+420450_" 4.72 	0 0 		1690 1710	1475 1495	1465
+	smooth ym ynew 5
+	print "GB6J143023+420450_.qdp" {xm ynew} 
+	#
+
+gb1510 	#13
+	rf "GB6J151002+570256_" 4.31 	0 0 		1690 1710	1475 1495	1465
+	#
+
+gb1535 	#14
+	rf "GB6J153533+025419_" 4.37 	1554 1556	1690 1710	1475 1496	1465
+	smooth ym ynew 9
+	print "GB6J153533+025419_.qdp" {xm ynew} 
+	#
+
+gb1612 	#15
+	rf "GB6J161216+470311_" 4.33 	0 0 		1690 1710	1475 1495	1465
+	smooth ym ynew 5
+	print "GB6J161216+470311_.qdp" {xm ynew} 
+	#
+
+gb1629 	#16
+	rf "GB6J162956+095959_" 4.97 	1556 1650 	1629 1638	1475 1495	1465
+	smooth ym ynew 5
+	print "GB6J162956+095959_.qdp" {xm ynew} 
+	#
+
+gb1648 	#17
+	rf "GB6J164856+460341_" 5.36 	0 0 		1690 1710	1475 1495	1455
+	#
+
+gb1711	#18
+	rf "GB6J171103+383016_" 3.98	1518 1531 	1690 1710	1465 1510	1465
+	#
+
+gb2357	#19
+	rf "GB6J235758+140205_" 4.25 	1554 1561 	1690 1710 	1475 1495 	1445
+	mask 1445 1460
+	set ym = ym if(!(xm > 1445 && xm < 1460))
+	set xm = xm if(!(xm > 1445 && xm < 1460))
+	smooth ym ynew 3
+	print "GB6J235758+140205_.qdp" {xm ynew} 	
+	#
+
+gau 2	#Plotta lo spettro e le due gaussiane che meglio fittano
+	lweight 2.5
+	expand 1.3
+
+	data $1".model"
+	lines 2 7
+	read par 1
+
+	set med1 = par[0]
+	set sig1 = par[1]
+	set nor1 = par[2]
+	set med2 = par[3]
+	set sig2 = par[4]
+	set nor2 = par[5]
+	
+	data $1".qdp"
+	read xm 1
+	read ym 2
+
+	set xgaus = 1350,1750,1
+	gaussian xgaus med1 sig1 nor1
+	set gaus1 = gaussian
+	gaussian xgaus med2 sig2 nor2
+	set gaus2 = gaussian
+	set gaussum = gaus1 + gaus2
+	
+	set ytemp = ym
+
+	max ytemp
+	min ytemp
+	define max (max*1.1)
+	define min (-max*0.15)
+	set ym = ym if(xm > 1350 && xm < 1700)
+	set xm = xm if(xm > 1350 && xm < 1700)
+	limits 1400 1700 $min $max
+
+	box
+
+	colours
+	ctype grey
+	ptype 10 3
+	connetti xm ym
+	ctype red
+	connect xgaus gaus1
+	connect xgaus gaus2
+	ctype blue
+	connect xgaus gaussum
+	ctype default
+	#
+
+gaussian 4 	#valuta una gaussiana con x vettore, media, sigma e norm
+		set $0 = $4*EXP(-(($1-$2)/$3)**2/2)
+		#
+
+gau0011	#1
+	gau "GB6J001115+144608_" 4.96 	
+	#
+
+gau0031	#2
+	gau "GB6J003126+150729_" 4.29 	
+	#
+
+gau0121	#3
+	lweight 2.5
+	expand 1.3
+
+	data "GB6J012126+034646_.model"
+	lines 2 10
+	read par 1
+
+	set med1 = par[0]
+	set sig1 = par[1]
+	set nor1 = par[2]
+	set med2 = par[3]
+	set sig2 = par[4]
+	set nor2 = par[5]
+	set med3 = par[6]
+	set sig3 = par[7]
+	set nor3 = par[8]
+
+	data "GB6J012126+034646_.qdp"
+	read xm 1
+	read ym 2
+
+	set xgaus = 1350,1750,1
+	gaussian xgaus med1 sig1 nor1
+	set gaus1 = gaussian
+	gaussian xgaus med2 sig2 nor2
+	set gaus2 = gaussian
+	gaussian xgaus med3 sig3 nor3
+	set gaus3 = gaussian
+	set gaussum = gaus1 + gaus2 + gaus3
+	
+	set ytemp = ym
+
+	max ytemp
+	min ytemp
+	define max (max*1.1)
+	define min (-max*0.15)
+	set ym = ym if(xm > 1350 && xm < 1700)
+	set xm = xm if(xm > 1350 && xm < 1700)
+	limits 1400 1700 $min $max
+
+	box
+
+	colours
+	ctype grey
+	ptype 10 3
+	connetti xm ym
+	ctype red
+	connect xgaus gaus1
+	connect xgaus gaus2
+	connect xgaus gaus3
+	ctype blue
+	connect xgaus gaussum
+	ctype default
+
+
+	#
+
+gau0835	#4
+	gau "GB6J083548+182519_" 4.41 		
+	#
+
+gau0839	#5
+	gau "GB6J083945+511206_" 4.40 		
+	#
+
+gau0918 #6
+	gau "GB6J091825+063722_" 4.20	
+	#
+
+gau1021 #7
+	gau "GB6J102107+220904_" 4.26 	
+	#
+
+gau1026 #8
+	gau "GB6J102623+254255_" 5.28 	
+	#
+
+gau1325 #9
+	gau "GB6J132512+112338_" 4.42 
+	#
+
+gau1348 #10
+	gau "GB6J134811+193520_" 4.40
+	#
+
+gau1412 #11	
+	gau "GB6J141212+062408_" 4.37 	
+	#
+
+gau1430 #12
+	gau "GB6J143023+420450_" 4.72 	
+	#
+
+gau1510 #13
+	gau "GB6J151002+570256_" 4.31 
+	#
+
+gau1535 #14
+	gau "GB6J153533+025419_" 4.37
+	#
+
+gau1612 #15
+	gau "GB6J161216+470311_" 4.33 
+	#
+
+gau1629 #16
+	gau "GB6J162956+095959_" 4.97 
+	#
+
+gau1648 #17
+	gau "GB6J164856+460341_" 5.36 
+	#
+
+gau1711	#18
+	gau "GB6J171103+383016_" 3.98	
+	#
+
+gau2357	#19
+	gau "GB6J235758+140205_" 4.25 	
+	#
+
+gautoeps   #
+		dev postencap GB6J001115+144608_.eps
+		gau0011
+		dev x11
+
+		dev postencap GB6J003126+150729_.eps
+		gau0031
+		dev x11
+
+		dev postencap GB6J012126+034646_.eps
+		gau0121
+		dev x11
+
+		dev postencap GB6J083548+182519_.eps
+		gau0835
+		dev x11
+
+		dev postencap GB6J083945+511206_.eps
+		gau0839
+		dev x11
+
+		dev postencap GB6J091825+063722_.eps
+		gau0918
+		dev x11
+
+		dev postencap GB6J102107+220904_.eps
+		gau1021
+		dev x11
+
+		dev postencap GB6J102623+254255_.eps
+		gau1026
+		dev x11
+
+		dev postencap GB6J132512+112338_.eps
+		gau1325
+		dev x11
+
+		dev postencap GB6J134811+193520_.eps
+		gau1348
+		dev x11
+
+		dev postencap GB6J141212+062408_.eps
+		gau1412
+		dev x11
+
+		dev postencap GB6J143023+420450_.eps
+		gau1430
+		dev x11
+
+		dev postencap GB6J151002+570256_.eps
+		gau1510
+		dev x11
+
+		dev postencap GB6J153533+025419_.eps
+		gau1535
+		dev x11
+
+		dev postencap GB6J161216+470311_.eps
+		gau1612
+		dev x11
+
+		dev postencap GB6J162956+095959_.eps
+		gau1629
+		dev x11
+
+		dev postencap GB6J164856+460341_.eps
+		gau1648
+		dev x11
+
+		dev postencap GB6J171103+383016_.eps
+		gau1711
+		dev x11
+
+		dev postencap GB6J235758+140205_.eps
+		gau2357
+		dev x11
+	#
+
+connetti 2 	#
+		set n = dimen($1)
+		set ics = $1
+		set ips = $2 
+		set xpippo = {0.0 0.0}
+		set ypippo = {0.0 0.0}
+		do i = 0, n - 2 {
+			if((ics[$i+1] - ics[$i]) < 5) {
+				set xpippo[0] = ics[$i]
+				set xpippo[1] = ics[$i+1]
+				set ypippo[0] = ips[$i]
+				set ypippo[1] = ips[$i+1]
+				connect xpippo ypippo
+			}
+		}
+		#
+
+calcolasigma 1	#
+		data $1".model"
+		lines 2 7
+		read par 1
+
+		set med1 = par[0]
+		set sig1 = par[1]
+		set nor1 = par[2]
+		set med2 = par[3]
+		set sig2 = par[4]
+		set nor2 = par[5]
+
+		set xgaus = 1350,1750,1
+		gaussian xgaus med1 sig1 nor1
+		set gaus1 = gaussian
+		gaussian xgaus med2 sig2 nor2
+		set gaus2 = gaussian
+		set gaussum = gaus1 + gaus2
+		set num = 0
+		set num2 = 0
+		set den = 0
+		do i=0,399 {set num = num + xgaus[$i]**3*gaussum[$i]
+			    set den = den + xgaus[$i]*gaussum[$i]
+			    set num2 = num2 + xgaus[$i]**2*gaussum[$i]
+			   }
+		set mean = num2/den
+		set var = num/den - mean**2
+		set $0 = sqrt(var)
+		#
+
+calcolafwhm 1	#
+		data $1".model"
+		lines 2 7
+		read par 1
+
+		set med1 = par[0]
+		set sig1 = par[1]
+		set nor1 = par[2]
+		set med2 = par[3]
+		set sig2 = par[4]
+		set nor2 = par[5]
+
+		set xgaus = 1350,1750,1
+		gaussian xgaus med1 sig1 nor1
+		set gaus1 = gaussian
+		gaussian xgaus med2 sig2 nor2
+		set gaus2 = gaussian
+		set gaussum = gaus1 + gaus2
+
+		max gaussum
+		set gmax = max
+		set x = xgaus if(gaussum >= gmax/2) 
+		max x
+		min x
+		set xmax = max
+		set xmin = min
+		set $0 = xmax-xmin
+		#
+
+calcolalumrig 1	#
+		data $1".model"
+		lines 2 7
+		read par 1
+
+		set med1 = par[0]
+		set sig1 = par[1]
+		set nor1 = par[2]
+		set med2 = par[3]
+		set sig2 = par[4]
+		set nor2 = par[5]
+
+		set xgaus = 1350,1750,1
+		gaussian xgaus med1 sig1 nor1
+		set gaus1 = gaussian
+		gaussian xgaus med2 sig2 nor2
+		set gaus2 = gaussian
+		set gaussum = gaus1 + gaus2
+		set integrale = 0
+		do i = 1,399 {set integrale = integrale + gaussum[$i]}
+		set $0 = integrale
+		#
+
+calcola1350 5	#
+		set xback1 = 1435
+		set xback2 = $3		
+		set xback3 = $4
+		set xback4 = $5
+		set z = $2
+		data $1"spect.txt"
+		read x 1 
+		read y 2
+		set x = x/(1 + z)
+		set y = y*(1 + z)
+		set yt = y if(x >= 1435 && x <= 1710)
+		set xt = x if(x >= 1435 && x <= 1710)
+		smooth yt ys 3
+
+		set xb = xt if((xt > xback1 && xt < xback2) || ( xt > $4 && xt < $5))
+		set yb = ys if((xt > xback1 && xt < xback2) || ( xt > $4 && xt < $5))
+		lsq xb yb xt yf k
+
+		set x = 1350
+		interp2 xt yf x flux1350
+		set flux1350 = flux1350*1350*1e-17
+		lumom flux1350 $2 1 
+
+		set $0 = (10**(lomega-44))
+		#
+
+calcolaMsig 2	#
+		set sig = $1
+		set lum	= $2
+		set massa = 10**6.73*(sig*299.792/1549)**2*(lum)**0.53
+		#
+
+calcolaMfwhm 2	#
+		set fw = $1
+		set lum	= $2
+		set massa = 10**6.66*(fw*299.792/1549)**2*(lum)**0.53
+		#
+
+calcola 	#
+		SET DIMEN(sigma) = 19
+		SET DIMEN(fwhm) = 19
+		SET DIMEN(lumriga) = 19
+		SET DIMEN(lum1350) = 19
+		SET DIMEN(M_sigma) = 19
+		SET DIMEN(M_FWHM) = 19
+
+		calcolasigma "GB6J001115+144608_"
+		calcolafwhm  "GB6J001115+144608_"
+		calcolalumrig  "GB6J001115+144608_"
+		calcola1350 "GB6J001115+144608_" 4.96 	1465	1610 1640 
+		set sigma[0] = calcolasigma
+		set fwhm[0] = calcolafwhm
+		set lumriga[0] = calcolalumrig
+		set lum1350[0] = calcola1350
+		calcolaMsig sigma[0] lum1350[0]
+		set M_sigma[0] = massa
+		calcolaMfwhm fwhm[0] lum1350[0]
+		set M_FWHM[0] = massa
+		
+		calcolasigma "GB6J003126+150729_"
+		calcolafwhm  "GB6J003126+150729_"
+		calcolalumrig  "GB6J003126+150729_"
+		calcola1350 "GB6J003126+150729_" 4.29 	1455 	1620 1625	
+		set sigma[1] = calcolasigma
+		set fwhm[1] = calcolafwhm
+		set lumriga[1] = calcolalumrig
+		set lum1350[1] = calcola1350
+		calcolaMsig sigma[1] lum1350[1]
+		set M_sigma[1] = massa
+		calcolaMfwhm fwhm[1] lum1350[1]
+		set M_FWHM[1] = massa	
+		
+		data "GB6J012126+034646_.model"
+		lines 2 10
+		read par 1
+
+		set med1 = par[0]
+		set sig1 = par[1]
+		set nor1 = par[2]
+		set med2 = par[3]
+		set sig2 = par[4]
+		set nor2 = par[5]
+		set med2 = par[3]
+		set sig2 = par[4]
+		set nor2 = par[5]
+
+		set xgaus = 1350,1750,1
+		gaussian xgaus med1 sig1 nor1
+		set gaus1 = gaussian
+		gaussian xgaus med2 sig2 nor2
+		set gaus2 = gaussian
+		gaussian xgaus med3 sig3 nor3
+		set gaus3 = gaussian
+		set gaussum = gaus1 + gaus2 + gaus3
+		set num = 0
+		set num2 = 0
+		set den = 0
+		do i=0,399 {set num = num + xgaus[$i]**3*gaussum[$i]
+			    set den = den + xgaus[$i]*gaussum[$i]
+			    set num2 = num2 + xgaus[$i]**2*gaussum[$i]
+			    set integrale = integrale + gaussum[$i]
+			   }
+		set mean = num2/den
+		set var = num/den - mean**2
+		max gaussum
+		set gmax = max
+		set x = xgaus if(gaussum >= gmax/2) 
+		max x
+		min x
+		set xmax = max
+		set xmin = min
+		calcola1350 "GB6J012126+034646_" 4.13 	1465  	1690 1710	
+		set sigma[2] = sqrt(var)
+		set fwhm[2] = xmax-xmin
+		set lumriga[2] = integrale
+		set lum1350[2] = calcola1350
+		calcolaMsig sigma[2] lum1350[2]
+		set M_sigma[2] = massa
+		calcolaMfwhm fwhm[2] lum1350[2]
+		set M_FWHM[2] = massa	
+		
+		calcolasigma "GB6J083548+182519_"
+		calcolafwhm  "GB6J083548+182519_"
+		calcolalumrig  "GB6J083548+182519_"
+		calcola1350 "GB6J083548+182519_" 4.41 	1465	 1690 1710
+		set sigma[3] = calcolasigma
+		set fwhm[3] = calcolafwhm
+		set lumriga[3] = calcolalumrig
+		set lum1350[3] = calcola1350
+		calcolaMsig sigma[3] lum1350[3]
+		set M_sigma[3] = massa
+		calcolaMfwhm fwhm[3] lum1350[3]
+		set M_FWHM[3] = massa	
+		
+		calcolasigma "GB6J083945+511206_"
+		calcolafwhm  "GB6J083945+511206_"
+		calcolalumrig  "GB6J083945+511206_"
+		calcola1350 "GB6J083945+511206_" 4.40 	1465	1675 1695		
+		set sigma[4] = calcolasigma
+		set fwhm[4] = calcolafwhm
+		set lumriga[4] = calcolalumrig
+		set lum1350[4] = calcola1350
+		calcolaMsig sigma[4] lum1350[4]
+		set M_sigma[4] = massa
+		calcolaMfwhm fwhm[4] lum1350[4]
+		set M_FWHM[4] = massa	
+		
+		calcolasigma "GB6J091825+063722_"
+		calcolafwhm  "GB6J091825+063722_"
+		calcolalumrig  "GB6J091825+063722_"
+		calcola1350 "GB6J091825+063722_" 4.20	1465 	1690 1705
+		set sigma[5] = calcolasigma
+		set fwhm[5] = calcolafwhm
+		set lumriga[5] = calcolalumrig
+		set lum1350[5] = calcola1350
+		calcolaMsig sigma[5] lum1350[5]
+		set M_sigma[5] = massa
+		calcolaMfwhm fwhm[5] lum1350[5]
+		set M_FWHM[5] = massa	
+		
+		calcolasigma "GB6J102107+220904_"
+		calcolafwhm  "GB6J102107+220904_"
+		calcolalumrig  "GB6J102107+220904_"
+		calcola1350 "GB6J102107+220904_" 4.26 	1465 	1690 1710	
+		set sigma[6] = calcolasigma
+		set fwhm[6] = calcolafwhm
+		set lumriga[6] = calcolalumrig
+		set lum1350[6] = calcola1350
+		calcolaMsig sigma[6] lum1350[6]
+		set M_sigma[6] = massa
+		calcolaMfwhm fwhm[6] lum1350[6]
+		set M_FWHM[6] = massa	
+		
+		calcolasigma "GB6J102623+254255_"
+		calcolafwhm  "GB6J102623+254255_"
+		calcolalumrig  "GB6J102623+254255_"
+		calcola1350 "GB6J102623+254255_" 5.28 	1465	1570 1580
+		set sigma[7] = calcolasigma
+		set fwhm[7] = calcolafwhm
+		set lumriga[7] = calcolalumrig
+		set lum1350[7] = calcola1350
+		calcolaMsig sigma[7] lum1350[7]
+		set M_sigma[7] = massa
+		calcolaMfwhm fwhm[7] lum1350[7]
+		set M_FWHM[7] = massa	
+		
+		calcolasigma "GB6J132512+112338_"
+		calcolafwhm  "GB6J132512+112338_"
+		calcolalumrig  "GB6J132512+112338_"
+		calcola1350 "GB6J132512+112338_" 4.42 	1465	1690 1710
+		set sigma[8] = calcolasigma
+		set fwhm[8] = calcolafwhm
+		set lumriga[8] = calcolalumrig
+		set lum1350[8] = calcola1350
+		calcolaMsig sigma[8] lum1350[8]
+		set M_sigma[8] = massa
+		calcolaMfwhm fwhm[8] lum1350[8]
+		set M_FWHM[8] = massa	
+		
+		calcolasigma "GB6J134811+193520_"
+		calcolafwhm  "GB6J134811+193520_"
+		calcolalumrig  "GB6J134811+193520_"
+		calcola1350 "GB6J134811+193520_" 4.40	1465 	1690 1710	
+		set sigma[9] = calcolasigma
+		set fwhm[9] = calcolafwhm
+		set lumriga[9] = calcolalumrig
+		set lum1350[9] = calcola1350
+		calcolaMsig sigma[9] lum1350[9]
+		set M_sigma[9] = massa
+		calcolaMfwhm fwhm[9] lum1350[9]
+		set M_FWHM[9] = massa	
+		
+		calcolasigma "GB6J141212+062408_"
+		calcolafwhm  "GB6J141212+062408_"
+		calcolalumrig  "GB6J141212+062408_"
+		calcola1350 "GB6J141212+062408_" 4.37 	1465 	1660 1680
+		set sigma[10] = calcolasigma
+		set fwhm[10] = calcolafwhm
+		set lumriga[10] = calcolalumrig
+		set lum1350[10] = calcola1350
+		calcolaMsig sigma[10] lum1350[10]
+		set M_sigma[10] = massa
+		calcolaMfwhm fwhm[10] lum1350[10]
+		set M_FWHM[10] = massa	
+		
+		calcolasigma "GB6J143023+420450_"
+		calcolafwhm  "GB6J143023+420450_"
+		calcolalumrig  "GB6J143023+420450_"
+		calcola1350 "GB6J143023+420450_" 4.72 	1465	1690 1710
+		set sigma[11] = calcolasigma
+		set fwhm[11] = calcolafwhm
+		set lumriga[11] = calcolalumrig
+		set lum1350[11] = calcola1350
+		calcolaMsig sigma[11] lum1350[11]
+		set M_sigma[11] = massa
+		calcolaMfwhm fwhm[11] lum1350[11]
+		set M_FWHM[11] = massa	
+		
+		calcolasigma "GB6J151002+570256_"
+		calcolafwhm  "GB6J151002+570256_"
+		calcolalumrig  "GB6J151002+570256_"
+		calcola1350 "GB6J151002+570256_" 4.31 	1465	1690 1710
+		set sigma[12] = calcolasigma
+		set fwhm[12] = calcolafwhm
+		set lumriga[12] = calcolalumrig
+		set lum1350[12] = calcola1350
+		calcolaMsig sigma[12] lum1350[12]
+		set M_sigma[12] = massa
+		calcolaMfwhm fwhm[12] lum1350[12]
+		set M_FWHM[12] = massa	
+		
+		calcolasigma "GB6J153533+025419_"
+		calcolafwhm  "GB6J153533+025419_"
+		calcolalumrig  "GB6J153533+025419_"
+		calcola1350 "GB6J153533+025419_" 4.37 	1465	1690 1710
+		set sigma[13] = calcolasigma
+		set fwhm[13] = calcolafwhm
+		set lumriga[13] = calcolalumrig
+		set lum1350[13] = calcola1350
+		calcolaMsig sigma[13] lum1350[13]
+		set M_sigma[13] = massa
+		calcolaMfwhm fwhm[13] lum1350[13]
+		set M_FWHM[13] = massa	
+		
+		calcolasigma "GB6J161216+470311_"
+		calcolafwhm  "GB6J161216+470311_"
+		calcolalumrig  "GB6J161216+470311_"
+		calcola1350 "GB6J161216+470311_" 4.33 	1465 	1690 1710	
+		set sigma[14] = calcolasigma
+		set fwhm[14] = calcolafwhm
+		set lumriga[14] = calcolalumrig
+		set lum1350[14] = calcola1350
+		calcolaMsig sigma[14] lum1350[14]
+		set M_sigma[14] = massa
+		calcolaMfwhm fwhm[14] lum1350[14]
+		set M_FWHM[14] = massa	
+		
+		calcolasigma "GB6J162956+095959_"
+		calcolafwhm  "GB6J162956+095959_"
+		calcolalumrig  "GB6J162956+095959_"
+		calcola1350 "GB6J162956+095959_" 4.97 	1465 	1629 1638
+		set sigma[15] = calcolasigma
+		set fwhm[15] = calcolafwhm
+		set lumriga[15] = calcolalumrig
+		set lum1350[15] = calcola1350
+		calcolaMsig sigma[15] lum1350[15]
+		set M_sigma[15] = massa
+		calcolaMfwhm fwhm[15] lum1350[15]
+		set M_FWHM[15] = massa	
+		
+		calcolasigma "GB6J164856+460341_"
+		calcolafwhm  "GB6J164856+460341_"
+		calcolalumrig  "GB6J164856+460341_"
+		calcola1350 "GB6J164856+460341_" 5.36 	1455	1690 1710
+		set sigma[16] = calcolasigma
+		set fwhm[16] = calcolafwhm
+		set lumriga[16] = calcolalumrig
+		set lum1350[16] = calcola1350
+		calcolaMsig sigma[16] lum1350[16]
+		set M_sigma[16] = massa
+		calcolaMfwhm fwhm[16] lum1350[16]
+		set M_FWHM[16] = massa	
+		
+		calcolasigma "GB6J171103+383016_"
+		calcolafwhm  "GB6J171103+383016_"
+		calcolalumrig  "GB6J171103+383016_"
+		calcola1350 "GB6J171103+383016_" 3.98	1465	1690 1710	
+		set sigma[17] = calcolasigma
+		set fwhm[17] = calcolafwhm
+		set lumriga[17] = calcolalumrig
+		set lum1350[17] = calcola1350
+		calcolaMsig sigma[17] lum1350[17]
+		set M_sigma[17] = massa
+		calcolaMfwhm fwhm[17] lum1350[17]
+		set M_FWHM[17] = massa	
+		
+		calcolasigma "GB6J235758+140205_"
+		calcolafwhm  "GB6J235758+140205_"
+		calcolalumrig  "GB6J235758+140205_"
+		calcola1350 "GB6J235758+140205_" 4.25 	1445 	1690 1710 
+		set sigma[18] = calcolasigma
+		set fwhm[18] = calcolafwhm
+		set lumriga[18] = calcolalumrig
+		set lum1350[18] = calcola1350
+		calcolaMsig sigma[18] lum1350[18]
+		set M_sigma[18] = massa
+		calcolaMfwhm fwhm[18] lum1350[18]
+		set M_FWHM[18] = massa	
+		
+		print "sigmafwhm.txt" {sigma fwhm lumriga lum1350 M_sigma M_FWHM}
+		#
+
+lumom 3	# based on the approximate formulae for Dlum
+	# presented in Pen 1999, ApJS, 120, 49
+	# for LAMBDA COSMOLOGY in FLAT UNIVERSE
+	# Omega_matter + Omega_Lambda =0 
+	# Here we define Omega (== Omega_matter)	
+     
+	set z=$2
+	set flux=$1
+	set alpha=$3
+	set c=2.9979e5
+	set H0=70
+	set Omega = 0.3
+	set pig=3.14159
+
+	dl_omega H0 Omega z
+
+	set dl=dl*3.085678e4
+	set k =(1+z)**(alpha-1)
+	set lum40=flux*(dl**2)*4*pig*k
+
+	set lomega = lg(lum40)+40
+
+	#print {flux z alpha lum40 lomega}
+	#
+dl_omega 3 # $1=H0 matter $2=Omega $3=z
+	# => Dlum in Mpc
+
+	set H0=$1
+	set Omega=$2
+	set z=$3
+	set c=2.9979e5
+
+	nuu Omega 1
+	set nu1=nu
+	
+	set x=1/(1+z)
+	nuu Omega x
+	set nuz=nu
+
+	set dl = (c/H0)*(1+z)*(nu1 - nuz)
+	set dlmpc=dl
+	#print {dl}	
+	#
+nuu 2	#  $1=Omega $2=A
+
+	set a=$2
+	set Omega=$1
+
+	set s3=(1-Omega)/Omega
+	set s2=s3**(2/3)
+	set s1=s3**(1/3)	
+	set s4=s1**4
+
+	set a2=a*a
+	set a3=a*a*a
+	set a4=a*a*a*a
+
+	set nu = 2*sqrt(s3+1)*((1/a4) -0.1540*(s1/a3) +0.4304*(s2/a2) + 0.19097*(s3/a) + 0.066941*s4)**(-1/8)
+	#
+
+hist0011 	#
+		data alldata.txt
+		lines 3 1002
+		read x 1
+		read y 2
+		read z 3
+		get_hist x Bin Hist 10 50 1
+		dev postencap sigmahist0011.eps
+		limits Bin Hist
+		histogram Bin Hist
+		box
+		get_hist y Bin Hist 30 60 1
+		dev postencap fwhmhist0011.eps
+		limits Bin Hist
+		histogram Bin Hist
+		box
+		get_hist z Bin Hist 400 600 10
+		dev postencap lumihist0011.eps
+		limits Bin Hist
+		histogram Bin Hist
+		box
+		dev x11
+		#
+
+hist0031 	#
+		data alldata.txt
+		lines 1005 2004
+		read x 1
+		read y 2
+		read z 3
+		get_hist x Bin Hist 10 50 1
+		dev postencap sigmahist0031.eps
+		limits Bin Hist
+		histogram Bin Hist
+		box
+		get_hist y Bin Hist 30 60 1
+		dev postencap fwhmhist0031.eps
+		limits Bin Hist
+		histogram Bin Hist
+		box
+		get_hist z Bin Hist 400 600 10
+		dev postencap lumihist0031.eps
+		limits Bin Hist
+		histogram Bin Hist
+		box
+		dev x11
+		#
+
+hist1648	#
+		data alldata.txt
+		lines 16035 17034
+		read x 1
+		read y 2
+		read z 3
+		get_hist x Bin Hist 10 50 1
+		dev postencap sigmahist1648.eps
+		limits 10 15 0 500
+		histogram Bin Hist
+		box
+		dev x11
+		#
+
+sigvsfwhm	#
+		data allerrors.txt
+		lines 3 21
+		read sig 1
+		read fwhm 3
+		read sigerr 2
+		read fwhmerr 4
+		set sigerr = sigerr/2
+		set fwhmerr = fwhmerr/2
+		limits 5 50 5 50
+		points sig fwhm
+		errorbar sig fwhm sigerr 1
+		errorbar sig fwhm sigerr 3
+		errorbar sig fwhm fwhmerr 2
+		errorbar sig fwhm fwhmerr 4
+		box 1 1 2 2
+		xlabel sigma (\AA)
+		ylabel FWHM (\AA)
+		ctype red
+		set x = {0 1000}
+		set y = {0 2355}
+		set z = {0 1000}
+		connect x y
+		colours
+		ctype blueish
+		connect x z
+		ctype default
+		#
+
+allhist		#
+		data alldata.txt
+		read {sigmarray 1 fwhmarray 2 lumiarray 3}
+		list set
+		do i=0,18 {
+			set sigmatemp = 
+		}
+		#
