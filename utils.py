@@ -2,15 +2,18 @@ import config
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import os
+from collections import Counter
 
-def rad_opt_limits(zz, z_ref=4, mag_ref=21, rad_ref=30):
+def rad_opt_limits(zz, z_ref=4, mag_ref=21, rad_ref=30, beta=False):
     dist_z, _ = ned_calc(zz)
-    dist4_5, _ = ned_calc(z_ref)
-    dist_ratio = dist4_5/dist_z
+    dist_ref, _ = ned_calc(z_ref)
+    dist_ratio = dist_ref/dist_z
     k_coeff_o = config.ALPHA_O-1
     k_coeff_r = config.ALPHA_R-1
     radio_limit = rad_ref*dist_ratio**2*((1+z_ref)/(1+zz))**k_coeff_r
     mag_limit = mag_ref-5*np.log10(dist_ratio)-2.5*k_coeff_o*np.log10((1+z_ref)/(1+zz))
+    if beta: mag_limit = mag_limit - 2.5*config.ALPHA_O*np.log10(1400/6231)
     return radio_limit,mag_limit
 
 
@@ -102,10 +105,11 @@ def ned_calc(z, H0=70, Omega_m=0.3, Omega_vac=0.7):
 def selection():
     class_data = pd.read_csv(config.SDSS_IN_CLASS_FILE, sep='\t')
 
-    C19_data = pd.read_csv("data/C19.txt", sep='\t')
-    print(C19_data['r_mag'])
+    names_with_spectra = os.listdir(config.HDF_FOLDER)
 
-    rad_lim, mag_lim = rad_opt_limits(class_data['z'])
+    C19_data = pd.read_csv("data/C19.txt", sep='\t')
+
+    rad_lim, mag_lim = rad_opt_limits(class_data['z'], z_ref=4.5, beta=True)
 
     selection_mask1 = (
         (class_data['psfmagr'] <= mag_lim)  &
@@ -115,19 +119,39 @@ def selection():
         (class_data['gbflux'] >= rad_lim)
     )
 
-    select = class_data[selection_mask1]
+    rad_lim, mag_lim = rad_opt_limits(class_data['z'], z_ref=4, beta=False)
 
-    print(f"Selected objects: {select.shape[0]}")
+    selection_mask2 = (
+        (class_data['psfmagr'] <= mag_lim)  &
+        (class_data['flag_class'] == 1)     &
+        (class_data['z'] >= 1.5)            &
+        (class_data['z'] < 4)               &
+        (class_data['gbflux'] >= rad_lim)
+    )
 
-    select.to_csv(config.SELECTION_FILE, sep='\t')
+    old_select = class_data[selection_mask1]
+    new_select = class_data[selection_mask2]
+
+    print(f"Selected objects old: {old_select.shape[0]}")
+    print(f"Selected objects old: {new_select.shape[0]}")
+
+    without_spectra = [print(n) for n in names_with_spectra if n not in old_select['classname'].values]
+    [print(n) for n in names_with_spectra if (n not in new_select['classname'].values) and (n not in without_spectra)]
+
+    #select.to_csv(config.SELECTION_FILE, sep='\t', index=False)
 
     z_bin = np.arange(1.5, 6, 0.1)
-    plt.scatter(select['z'], select['psfmagr'], s=0.5, color='black')
-    plt.scatter(C19_data['z'], C19_data['r_mag'], s=1, color='red')
-    plt.plot(z_bin, rad_opt_limits(z_bin, z_ref=4.5)[1], color='blue')
-    plt.plot(z_bin, rad_opt_limits(z_bin, z_ref=4)[1], color='green')
+    plt.scatter(old_select['z'], old_select['psfmagr'], color='black', marker='^')
+    plt.scatter(new_select['z'], new_select['psfmagr'], color='red', marker='v')
+    plt.plot(z_bin, rad_opt_limits(z_bin, z_ref=4)[1], color='red')
+    plt.plot(z_bin, rad_opt_limits(z_bin, z_ref=4.5, beta=True)[1], color='black')
     plt.show()
-
+    plt.scatter(old_select['z'], old_select['gbflux'], color='black', marker='^')
+    plt.scatter(new_select['z'], new_select['gbflux'], color='red', marker='v')
+    plt.plot(z_bin, rad_opt_limits(z_bin, z_ref=4)[0], color='red')
+    plt.plot(z_bin, rad_opt_limits(z_bin, z_ref=4.5, beta=True)[0], color='black')
+    plt.show()
+    #+ 2.5*config.ALPHA_O*np.log10(1400/6231)
 
 def test():
     selection()

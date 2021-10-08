@@ -9,14 +9,10 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
 def continuum_estimate(x, y, inf1, inf2, sup1, sup2):
-    int1 = y[(x >= sup1) & (x <= sup2)]
-    int2 = y[(x >= inf1) & (x <= inf2)]
-    y1, y2 = np.mean(int1), np.mean(int2)
-    x1 = (inf1+inf2)*0.5
-    x2 = (sup1+sup2)*0.5
-    m = (y2-y1)/(x1-x2)
-    q = ((y1+y2) - m*(x1+x2))*0.5
-    return m,q
+    mask = [((x >= sup1) & (x <= sup2)) | ((x >= inf1) & (x <= inf2))]
+    yt = y[mask]
+    xy = x[mask]
+    return np.polyfit(xt, yt, deg=1)
 
 def mask(spectrum, masks):
     if not masks: return spectrum
@@ -40,7 +36,7 @@ def gaus_func(x, a, x1, sigma1, b=0, x2=0, sigma2=1):
             abs(b)*np.exp(-(x-x2)**2/(2*sigma2**2)))
 
 for obj_name in os.listdir(config.HDF_FOLDER):
-    obj_name = 'GB6J130603+552947'
+    #obj_name = 'GB6J130603+552947'
     file_path = os.path.join(config.HDF_FOLDER, obj_name)
     print(obj_name)
     obj_spectra = pd.read_hdf(file_path, key='spectrum')
@@ -48,7 +44,7 @@ for obj_name in os.listdir(config.HDF_FOLDER):
 
     bg_window, mask_window, bounds = init_dictionary(obj_name)
 
-    m, q = continuum_estimate(obj_spectra["lambda"], obj_spectra["flux"], *bg_window)
+    p_cont,  = continuum_estimate(obj_spectra["lambda"], obj_spectra["flux"], *bg_window)
 
     plt.plot(obj_spectra["lambda"], obj_spectra["flux"], color='black', lw=0.5)
     plt.plot(obj_spectra["lambda"], m*obj_spectra["lambda"] + q, color='red', lw=0.5)
@@ -59,7 +55,7 @@ for obj_name in os.listdir(config.HDF_FOLDER):
     obj_spectra["error"] = np.sqrt(1/obj_spectra["ivar"])*(1+obj_info["z_temp"].values)
 
     init_guess = [10, 1549, 10, 10, 1549, 15]
-    par, _ = curve_fit(
+    par, cov = curve_fit(
         f=gaus_func,
         xdata=obj_spectra["lambda"],
         ydata=obj_spectra["flux"],
@@ -67,6 +63,10 @@ for obj_name in os.listdir(config.HDF_FOLDER):
         p0=init_guess,
         bounds=bounds
     )
+
+    plt.matshow(cov)
+    plt.show()
+    break
 
     plt.plot(obj_spectra["lambda"], obj_spectra["flux"], color='black', lw=0.5)
     plt.plot(obj_spectra["lambda"], obj_spectra["error"])
