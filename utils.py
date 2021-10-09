@@ -5,7 +5,9 @@ import matplotlib.pyplot as plt
 import os
 from collections import Counter
 
-def rad_opt_limits(zz, z_ref=4, mag_ref=21, rad_ref=30, beta=False):
+def rad_opt_limits(zz, z_ref=4, mag_ref=21, rad_ref=30):
+    '''Limiti ottico e radio per ottenere oggetti con la stessa luminosità
+    minima di un oggetto a z=4 con mag-r = 21 e flusso radio a 5GHz = 30 mJy'''
     dist_z, _ = ned_calc(zz)
     dist_ref, _ = ned_calc(z_ref)
     dist_ratio = dist_ref/dist_z
@@ -13,11 +15,11 @@ def rad_opt_limits(zz, z_ref=4, mag_ref=21, rad_ref=30, beta=False):
     k_coeff_r = config.ALPHA_R-1
     radio_limit = rad_ref*dist_ratio**2*((1+z_ref)/(1+zz))**k_coeff_r
     mag_limit = mag_ref-5*np.log10(dist_ratio)-2.5*k_coeff_o*np.log10((1+z_ref)/(1+zz))
-    if beta: mag_limit = mag_limit - 2.5*config.ALPHA_O*np.log10(1400/6231)
     return radio_limit,mag_limit
 
 
 def ned_calc(z, H0=70, Omega_m=0.3, Omega_vac=0.7):
+    '''Scrpit basato sul NED cosmology calculator, per stimare DL e V(Gpc)'''
     # initialize constants
     WM = Omega_m   # Omega(matter)
     WV = Omega_vac # Omega(vacuum) or lambda
@@ -103,15 +105,25 @@ def ned_calc(z, H0=70, Omega_m=0.3, Omega_vac=0.7):
 
 
 def selection():
+    '''Scansiona gli oggetti della CLASS presenti nell'area SDSS (con mag-r e
+    |b"| >= 20) e seleziona quelli che rispettano i limiti di luminosità del
+    nostro sample e compresi tra 1.5<=z<4.
+    A questi aggiunge poi gli oggetti del campione C19.
+    Calcola infine il numero di oggetti e quanti di questi non hanno uno spettro
+    (nella SDSS, per gli oggetti z<4, o in generale uno spettro elettronico per
+    il campione C19).
+    Save the selection in a file data/selection.txt
+    '''
     class_data = pd.read_csv(config.SDSS_IN_CLASS_FILE, sep='\t')
 
-    names_with_spectra = os.listdir(config.HDF_FOLDER)
+    names_with_spectra = os.listdir(config.FITS_FOLDER)
+    names_with_spectra = [n.strip('.fits').strip('.txt') for n in names_with_spectra]
 
-    C19_data = pd.read_csv("data/C19.txt", sep='\t')
+    C19_names = pd.read_csv("data/C19.txt", sep='\t')['name'].values
 
-    rad_lim, mag_lim = rad_opt_limits(class_data['z'], z_ref=4.5, beta=True)
+    rad_lim, mag_lim = rad_opt_limits(class_data['z'])
 
-    selection_mask1 = (
+    selection_mask = (
         (class_data['psfmagr'] <= mag_lim)  &
         (class_data['flag_class'] == 1)     &
         (class_data['z'] >= 1.5)            &
@@ -119,39 +131,43 @@ def selection():
         (class_data['gbflux'] >= rad_lim)
     )
 
-    rad_lim, mag_lim = rad_opt_limits(class_data['z'], z_ref=4, beta=False)
+    select = class_data[selection_mask]
 
-    selection_mask2 = (
-        (class_data['psfmagr'] <= mag_lim)  &
-        (class_data['flag_class'] == 1)     &
-        (class_data['z'] >= 1.5)            &
-        (class_data['z'] < 4)               &
-        (class_data['gbflux'] >= rad_lim)
-    )
+    print(f"Selected objects z<4: {select.shape[0]}")
 
-    old_select = class_data[selection_mask1]
-    new_select = class_data[selection_mask2]
+    without_spectra = [n for n in select['classname'] if n not in names_with_spectra]
 
-    print(f"Selected objects old: {old_select.shape[0]}")
-    print(f"Selected objects old: {new_select.shape[0]}")
+    print(f"z<4 objects lacking a SDSS spectrum: {len(without_spectra)}")
 
-    without_spectra = [print(n) for n in names_with_spectra if n not in old_select['classname'].values]
-    [print(n) for n in names_with_spectra if (n not in new_select['classname'].values) and (n not in without_spectra)]
+    C19 = []
+    for n in C19_names:
+        df = class_data[ class_data['classname'] == n ]
+        C19.append(df)
 
-    #select.to_csv(config.SELECTION_FILE, sep='\t', index=False)
+    C19.append(pd.DataFrame(
+        {
+            'classname': ['GB6J164856+460341','GB6J090631+693027'],
+            'gbflux': [36, 114],
+            'psfmagr': [20.31, 20.54],
+            'flag_class': [1, 1],
+            'z': [5.36000, 5.47000],
+            'RA': [0.00000, 0.00000],
+            'DEC': [0.00000, 0.00000],
+            'bii': [0.00000, 0.00000]
+        }
+    ))
 
-    z_bin = np.arange(1.5, 6, 0.1)
-    plt.scatter(old_select['z'], old_select['psfmagr'], color='black', marker='^')
-    plt.scatter(new_select['z'], new_select['psfmagr'], color='red', marker='v')
-    plt.plot(z_bin, rad_opt_limits(z_bin, z_ref=4)[1], color='red')
-    plt.plot(z_bin, rad_opt_limits(z_bin, z_ref=4.5, beta=True)[1], color='black')
-    plt.show()
-    plt.scatter(old_select['z'], old_select['gbflux'], color='black', marker='^')
-    plt.scatter(new_select['z'], new_select['gbflux'], color='red', marker='v')
-    plt.plot(z_bin, rad_opt_limits(z_bin, z_ref=4)[0], color='red')
-    plt.plot(z_bin, rad_opt_limits(z_bin, z_ref=4.5, beta=True)[0], color='black')
-    plt.show()
-    #+ 2.5*config.ALPHA_O*np.log10(1400/6231)
+    C19 = pd.concat(C19)
+
+    total = pd.concat([select, C19])
+
+    print(f"Selected objects: {total.shape[0]}")
+
+    without_spectra = [n for n in total['classname'] if n not in names_with_spectra]
+
+    print(f"Lacking a spectrum: {len(without_spectra)}")
+
+    total.to_csv(config.SELECTION_FILE, sep='\t', index=False)
 
 def test():
     selection()
