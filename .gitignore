@@ -1,4 +1,5 @@
 prepare_plots/
 __pycache__/
-spectra_hdf/
+pre_fit_plots/
+spectra_hdf.bak/
 

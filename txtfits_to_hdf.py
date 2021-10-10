@@ -21,6 +21,8 @@ class_data = pd.read_csv(config.SELECTION_FILE, sep='\t', usecols=[0,1,2,4])
 colnames=['flux','lambda','ivar','and_mask','or_mask','wdisp','sky','model']
 
 for file in os.listdir(config.FITS_FOLDER):
+    print("This operation will overwrite all the hdf files containing the fit information. If you are sure delete the \"break\" command in this script.")
+    break
     obj_name = file.strip('.fits').strip('.txt')
     if obj_name not in class_data['classname'].values: continue
 

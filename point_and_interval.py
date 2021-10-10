@@ -45,7 +45,7 @@ class Intervals_collector:
                     self.spans[-1].remove()
                     del self.spans[-1]
                     self.fig.canvas.draw()
-                else: raise
+                else: pass
             except(IndexError):
                 print("Lista vuota!")
                 pass
@@ -103,9 +103,9 @@ def continuum_fit(spectrum_df, int):
     m, q = np.polyfit(continuum_df['lambda'], continuum_df['flux'], 1)
     return m, q
 
-for obj_name in os.listdir(config.HDF_FOLDER):
+for i, obj_name in enumerate(sorted(os.listdir(config.HDF_FOLDER))):
     file_path = os.path.join(config.HDF_FOLDER, obj_name)
-    print(obj_name)
+    print(i, obj_name)
     obj_spectra = pd.read_hdf(file_path, key='spectrum')
     obj_info = pd.read_hdf(file_path, key='info')
 
@@ -113,7 +113,7 @@ for obj_name in os.listdir(config.HDF_FOLDER):
         'name': obj_name,
         'continuum': [1435,1455,1690,1710],
     }
-    fig = plt.figure(figsize=(10,8))
+    fig = plt.figure(figsize=(20,8))
     ax = fig.add_subplot(111)
     ax.plot(obj_spectra['lambda'], obj_spectra['flux'], color='black', lw=0.5)
     ax.set_title(obj_name)
