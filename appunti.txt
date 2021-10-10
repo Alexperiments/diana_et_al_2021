@@ -1,0 +1,5 @@
+Appunti:
+
+	- Gli unici oggetti che consideriamo al di fuori dell'area del SDSS sono GB6J164856+460341 e GB6J090631+693027. Per il primo abbiamo lo spettro LBT, per il secondo solo quello cartaceo.
+	- Consideriamo anche gli oggetti GB6J205332+010307, GB6J162956+095959 e GB6J012202+030951 che cadono nell'area SDSS ma hanno solo spettro TNG, LBT e cartaceo rispettivamente.
+	- Non trovo il flusso radio a 5GHz di GB6J164856+460341. Lo inferisco dai punti a 8GHz e 1.4GHz, risultando in S5Ghz=36 mJy
