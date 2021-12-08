@@ -1,5 +1,8 @@
-prepare_plots/
 __pycache__/
 pre_fit_plots/
-spectra_hdf.bak/
-
+fit_plots/
+dr7_bh_Nov19_2013.fits
+appunti.txt
+venv/
+.idea/
+object_pickles/

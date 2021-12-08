@@ -20,17 +20,20 @@ class_data = pd.read_csv(config.SELECTION_FILE, sep='\t', usecols=[0,1,2,4])
 
 colnames=['flux','lambda','ivar','and_mask','or_mask','wdisp','sky','model']
 
-for file in os.listdir(config.FITS_FOLDER):
-    print("This operation will overwrite all the hdf files containing the fit information. If you are sure delete the \"break\" command in this script.")
-    break
+for file in os.listdir(config.SOURCE_FOLDER):
     obj_name = file.strip('.fits').strip('.txt')
     if obj_name not in class_data['classname'].values: continue
 
-    file_path = os.path.join(config.FITS_FOLDER, file)
+    print(obj_name)
+    file_path = os.path.join(config.SOURCE_FOLDER, file)
+    target_path = os.path.join(config.OUT_FOLDER + obj_name)
+    os.system(f"mkdir -p {target_path}/")
+
     obj_info = class_data[ class_data['classname'] == obj_name ]
 
-    print(file)
     z = obj_info['z'].values
+    a_v = obj_info['a_v'].values
+
     if file.endswith('.fits'):
         tbl = Table.read(file_path, hdu=1)
         obj_spect = tbl.to_pandas()
@@ -63,9 +66,8 @@ for file in os.listdir(config.FITS_FOLDER):
         (obj_spect['lambda'] >= config.TRIM_INF) &
         (obj_spect['lambda'] <= config.TRIM_SUP)
     ]
-    obj_spect.reset_index().to_hdf(
-        os.path.join(config.HDF_FOLDER,obj_name), key="spectrum", mode='w'
-    )
-    obj_info.reset_index().to_hdf(
-        os.path.join(config.HDF_FOLDER,obj_name), key="info", mode='a'
-    )
+    dead_pixel_mask = ( obj_spect['ivar'].values != 0)
+    obj_spect = obj_spect[dead_pixel_mask]
+
+    obj_spect.reset_index().to_pickle(os.path.join(target_path, 'spectrum.pkl'))
+    obj_info.reset_index().to_pickle(os.path.join(target_path, 'info.pkl'))

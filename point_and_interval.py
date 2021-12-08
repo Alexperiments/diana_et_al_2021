@@ -4,7 +4,7 @@ import pandas as pd
 from astropy.table import Table
 import os
 import config
-import h5py
+import pickle
 
 
 class Intervals_collector:
@@ -56,8 +56,8 @@ class Intervals_collector:
             self.update()
         elif event.key == 'f4':
             if (len(self.continuum) == 4) and (len(self.masks)%2 == 0):
-                int_dict['continuum'] = str(self.continuum)
-                int_dict['masks'] = str(self.masks)
+                int_dict['continuum'] = self.continuum
+                int_dict['masks'] = self.masks
                 name = int_dict['name'] + '.png'
                 plt.savefig(config.PREPARATION_PLOTS+name, dpi=300)
                 plt.close(self.fig)
@@ -103,32 +103,39 @@ def continuum_fit(spectrum_df, int):
     m, q = np.polyfit(continuum_df['lambda'], continuum_df['flux'], 1)
     return m, q
 
-for i, obj_name in enumerate(sorted(os.listdir(config.HDF_FOLDER))):
-    file_path = os.path.join(config.HDF_FOLDER, obj_name)
+
+for i, obj_name in enumerate(sorted(os.listdir(config.OUT_FOLDER))):
+    obj_name = 'GB6J102623+254255'
+    file_path = os.path.join(config.OUT_FOLDER, obj_name)
     print(i, obj_name)
-    obj_spectra = pd.read_hdf(file_path, key='spectrum')
-    obj_info = pd.read_hdf(file_path, key='info')
+
+    with open(os.path.join(file_path, 'spectrum.pkl'), 'rb') as f:
+        obj_spectra = pickle.load(f)
+    with open(os.path.join(file_path, 'info.pkl'), 'rb') as f:
+        obj_info = pickle.load(f)
 
     int_dict = {
         'name': obj_name,
         'continuum': [1435,1455,1690,1710],
+        'masks': []
     }
+    m, q = continuum_fit(obj_spectra, int_dict['continuum'])
+    int_dict['m'] = m
+    int_dict['q'] = q
+
     fig = plt.figure(figsize=(20,8))
     ax = fig.add_subplot(111)
     ax.plot(obj_spectra['lambda'], obj_spectra['flux'], color='black', lw=0.5)
     ax.set_title(obj_name)
     for xi in int_dict['continuum']:
         ax.axvline(xi, color='green', ls='--')
-    m, q = continuum_fit(obj_spectra, int_dict['continuum'])
-    int_dict['m'] = m
-    int_dict['q'] = q
+    for i in range(len(int_dict['masks'])//2):
+        ax.axvspan(int_dict['masks'][i*2], int_dict['masks'][i*2+1])
     x_bin = np.arange(int_dict['continuum'][0], int_dict['continuum'][3], 1)
-    ax.plot(x_bin, q + m*x_bin, color='red')
+    ax.plot(x_bin, int_dict['q'] + int_dict['m']*x_bin, color='red')
     int = Intervals_collector(fig)
     plt.show()
 
     print(int_dict)
-    df = pd.DataFrame(int_dict, index=[0])
-    df.reset_index().to_hdf(
-        os.path.join(config.HDF_FOLDER,obj_name), key="pre_fit", mode='a'
-    )
+    with open(os.path.join(file_path, 'pre_fit.pkl'), 'wb') as f:
+        pickle.dump(int_dict, f)
