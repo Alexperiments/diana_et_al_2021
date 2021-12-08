@@ -1,8 +1,12 @@
 import numpy as np
 import pandas as pd
 from astropy.table import Table
+from extinction import fitzpatrick99 as fp99
+from extinction import remove as ext_remove
 import os
 import config
+
+## TODO: i nuovi file fits non sono rinominati automaticamente in 'nome_sorgente.fits'
 
 '''
 Visto che gli spettri sono salvati in formati misti (.fits .txt) ho pensato di
@@ -16,11 +20,11 @@ ivar non è presente. Per consistenza definisco quindi ivar come 1/var in un
 intervallo rappresentativo attorno alla linea (1460A-1480A).
 '''
 
-class_data = pd.read_csv(config.SELECTION_FILE, sep='\t', usecols=[0,1,2,4])
+class_data = pd.read_csv(config.SELECTION_FILE, sep='\s+')
 
 colnames=['flux','lambda','ivar','and_mask','or_mask','wdisp','sky','model']
 
-for file in os.listdir(config.SOURCE_FOLDER):
+for file in np.sort(os.listdir(config.SOURCE_FOLDER)):
     obj_name = file.strip('.fits').strip('.txt')
     if obj_name not in class_data['classname'].values: continue
 
@@ -47,12 +51,21 @@ for file in os.listdir(config.SOURCE_FOLDER):
                 'and_mask', 'or_mask', 'wdisp', 'sky', 'model'
             ], inplace=True
         )
-        obj_spect['lambda'] = (10**obj_spect['lambda'])/(1+z)
+        obj_spect['lambda'] = 10 ** obj_spect['lambda']
+
+        extinction_curve = fp99(obj_spect['lambda'].to_numpy(dtype=np.double), a_v, 3.1)
+        obj_spect['flux'] = ext_remove(extinction_curve, obj_spect['flux'])
+
+        obj_spect['lambda'] = (obj_spect['lambda'])/(1+z)
         obj_spect['flux'] = obj_spect['flux']*(1+z)
 
     elif file.endswith('.txt'):
         obj_spect = pd.read_csv(file_path, sep='\t', skiprows=2, header=None)
         obj_spect.columns = ['lambda', 'flux']
+
+        extinction_curve = fp99(obj_spect['lambda'].to_numpy(dtype=np.double), a_v, 3.1)
+        obj_spect['flux'] = ext_remove(extinction_curve, obj_spect['flux'])
+
         obj_spect['lambda'] = obj_spect['lambda']/(1+z)
         obj_spect['flux'] = obj_spect['flux']*(1+z)
         continuum = obj_spect['flux'][
@@ -65,8 +78,8 @@ for file in os.listdir(config.SOURCE_FOLDER):
     obj_spect = obj_spect[
         (obj_spect['lambda'] >= config.TRIM_INF) &
         (obj_spect['lambda'] <= config.TRIM_SUP)
-    ]
-    dead_pixel_mask = ( obj_spect['ivar'].values != 0)
+        ]
+    dead_pixel_mask = (obj_spect['ivar'].values != 0)
     obj_spect = obj_spect[dead_pixel_mask]
 
     obj_spect.reset_index().to_pickle(os.path.join(target_path, 'spectrum.pkl'))

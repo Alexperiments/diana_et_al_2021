@@ -75,6 +75,6 @@ if __name__ == '__main__':
     z_inf, z_sup = 0,7
     z_QLF = np.arange(z_inf, z_sup, 0.1)
     min_lum_eff = calc_lum_eff()
-    QLF_mean = trap_int_L(min_lum_eff, min_lum_eff + 2, z_QLF)
+    QLF_mean = shen_qlf(z_QLF, min_lum_eff, min_lum_eff + 4)
     plt.plot(z_QLF, QLF_mean)
     plt.show()

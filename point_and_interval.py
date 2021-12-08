@@ -103,9 +103,15 @@ def continuum_fit(spectrum_df, int):
     m, q = np.polyfit(continuum_df['lambda'], continuum_df['flux'], 1)
     return m, q
 
+temp_list = [
+    'GB6J010037+334513',
+    'GB6J080244+525546',
+    'GB6J080634+450439',
+    'GB6J165634+182624'
+]
 
-for i, obj_name in enumerate(sorted(os.listdir(config.OUT_FOLDER))):
-    obj_name = 'GB6J102623+254255'
+#for i, obj_name in enumerate(sorted(os.listdir(config.OUT_FOLDER))):
+for i, obj_name in enumerate(temp_list):
     file_path = os.path.join(config.OUT_FOLDER, obj_name)
     print(i, obj_name)
 

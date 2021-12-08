@@ -37,9 +37,18 @@ def calc_edd_ratio(lamL1350, mass):
 init_guess1 = [ 1, 1549, 30 ]
 init_guess2 = [ 1, 1549, 30, 1, 1549, 30 ]
 init_guess3 = [ 1, 1549, 30, 1, 1549, 30, 1, 1549, 30 ]
+bounds1 = [[0,0,0], [np.inf, np.inf, np.inf]]
+bounds2 = [2*[0,0,0], 2*[np.inf, np.inf, np.inf]]
+bounds3 = [3*[0,0,0], 3*[np.inf, np.inf, np.inf]]
 
-for i, obj_name in enumerate(sorted(os.listdir(config.OUT_FOLDER))):
-    obj_name = 'GB6J102623+254255'
+temp_list = [
+    'GB6J010037+334513',
+    'GB6J080244+525546',
+    'GB6J080634+450439',
+    'GB6J165634+182624'
+]
+#for i, obj_name in enumerate(sorted(os.listdir(config.OUT_FOLDER))):
+for i, obj_name in enumerate(temp_list):
     file_path = os.path.join(config.OUT_FOLDER, obj_name)
     print(i, obj_name)
 
@@ -81,9 +90,9 @@ for i, obj_name in enumerate(sorted(os.listdir(config.OUT_FOLDER))):
     flux = flux - (m*lam + q)
     par1, par2, par3 = [], [], []
     try:
-        par1, pcov1 = curve_fit(gaussian3, lam, flux, p0=init_guess1, sigma=np.sqrt(1/ivar), maxfev = 500000)
-        par2, pcov2 = curve_fit(gaussian3, lam, flux, p0=init_guess2, sigma=np.sqrt(1/ivar), maxfev = 500000)
-        par3, pcov3 = curve_fit(gaussian3, lam, flux, p0=init_guess3, sigma=np.sqrt(1/ivar), maxfev = 500000)
+        par1, pcov1 = curve_fit(gaussian3, lam, flux, p0=init_guess1, bounds=bounds1, sigma=np.sqrt(1/ivar), maxfev = 500000)
+        par2, pcov2 = curve_fit(gaussian3, lam, flux, p0=init_guess2, bounds=bounds2, sigma=np.sqrt(1/ivar), maxfev = 500000)
+        par3, pcov3 = curve_fit(gaussian3, lam, flux, p0=init_guess3, bounds=bounds3, sigma=np.sqrt(1/ivar), maxfev = 500000)
     except:
         print(f"{obj_name} Spettro problematico")
         plt.plot(lam, flux)

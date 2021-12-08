@@ -1,20 +1,54 @@
 Procedimento per ottenere le densità da zero
 
-1) Lo script utils.selection() seleziona gli oggetti che rispettano i limiti del nostro sample, controlla quanti non hanno uno spettro nella cartella "spectra_fits" e poi salva la selezione nel file data/selection.txt
+1) Lo script utils.selection() seleziona gli oggetti che rispettano i limiti del nostro sample, controlla quanti non
+hanno uno spettro nella cartella "spectra_fits" e poi salva la selezione nel file data/selection.txt
 
-2) Lo script txtfits_to_hdf.py legge il file selection.txt, carica i file .fits o .txt disponibili che corrispondono a quella selezione (presenti nella cartella spectra_fits) e prepara gli spettri, portandoli nel restframe e riducendo il range di lunghezze d'onda, accorpa i dati dello spettro con le info fotometriche, radio e il redshift, e salva tutto in due file compressi nella cartella objects_pickles, il primo "spectrum.pkl" contiene i dati sullo spettro (compreso ivar), il secondo "info.pkl" le info fotometriche, radio, redshift, ...
+2) Lo script txtfits_to_hdf.py legge il file selection.txt, carica i file .fits o .txt disponibili che corrispondono a
+quella selezione (presenti nella cartella spectra_fits) e prepara gli spettri, portandoli nel restframe e riducendo il
+range di lunghezze d'onda, accorpa i dati dello spettro con le info fotometriche, radio e il redshift, e salva tutto in
+due file compressi nella cartella objects_pickles, il primo "spectrum.pkl" contiene i dati sullo spettro (compreso ivar),
+il secondo "info.pkl" le info fotometriche, radio, redshift, ...
 
-3) point_and_interval.py fornisce l'interfaccia grafica per la selezione degli intervalli del continuo e le maschere personalizzate da applicare agli spettri. Carica le informazioni contenute nei vari file "spectrum.pkl" e mostra lo spettro in un plot interattivo. Istruzioni: premendo 'c' si attiva la modalità di selezione del continuo, bisognerà cliccare 4 volte per selezionare 2 regioni poco rumorose, per fittare il continuo con una retta (il fit è automatico e viene mostrato dopo la selezione del quarto punto). Premendo 'm' si attiva la modalità maschera, si possono selezionare gli intervalli da mascherare selezionando due punti sullo spettro (il primo deve essere minore del secondo, per consistenza). Premendo 'r' si esce dalle modalità attive, per poter cliccare liberamente. Se ci si rende conto di aver sbagliato a cliccare, si può premere 'canc', mentre ci si trova all'interno di una delle due modalità, per cancellare l'ultima selezione. Una volta soddisfatti si preme f4 per salvare gli intervalli in un file "pre_fit.pkl" nella cartella objects_pickles.
+3) point_and_interval.py fornisce l'interfaccia grafica per la selezione degli intervalli del continuo e le maschere
+personalizzate da applicare agli spettri. Carica le informazioni contenute nei vari file "spectrum.pkl" e mostra lo
+spettro in un plot interattivo. Istruzioni: premendo 'c' si attiva la modalità di selezione del continuo, bisognerà
+cliccare 4 volte per selezionare 2 regioni poco rumorose, per fittare il continuo con una retta (il fit è automatico e
+viene mostrato dopo la selezione del quarto punto). Premendo 'm' si attiva la modalità maschera, si possono selezionare
+gli intervalli da mascherare selezionando due punti sullo spettro (il primo deve essere minore del secondo, per
+consistenza). Premendo 'r' si esce dalle modalità attive, per poter cliccare liberamente. Se ci si rende conto di aver
+sbagliato a cliccare, si può premere 'canc', mentre ci si trova all'interno di una delle due modalità, per cancellare
+l'ultima selezione. Una volta soddisfatti si preme f4 per salvare gli intervalli in un file "pre_fit.pkl" nella cartella
+objects_pickles.
 
-4) parameters_estimation.py fornisce una seconda interfaccia grafica per la selezione del miglior fit gaussiano della linea CIV. Il file legge spectrum.pkl e pre_fit.pkl per mostrare un plot con lo spettro nel rest-frame, con il continuo sottratto e le regioni mascherate. In particolare i plot mostrati sono 3, a seconda del numero di gaussiane usate per il fit (1, 2 o 3). Dopo aver valutato quale dei 3 interpreta meglio la linea, si può chiudere il plot (alt+f4) e digitare a terminale il numero di gaussiane da usare, e premere invio. Il programma salva i parametri calcolati dal fit in un file parameters.pkl nella cartella objects_pickles. Gli errori sui parametri sono calcolati creando N spettri aggiungendo un rumore gaussiano calcolato dall'ivar dello spettro (ove presente, o dal rumore medio attorno alla linea), viene poi effettuato il fit della linea con il numero di gaussiane precedentemente selezionato.
+4) parameters_estimation.py fornisce una seconda interfaccia grafica per la selezione del miglior fit gaussiano della
+linea CIV. Il file legge spectrum.pkl e pre_fit.pkl per mostrare un plot con lo spettro nel rest-frame, con il continuo
+sottratto e le regioni mascherate. In particolare i plot mostrati sono 3, a seconda del numero di gaussiane usate per il
+fit (1, 2 o 3). Dopo aver valutato quale dei 3 interpreta meglio la linea, si può chiudere il plot (alt+f4) e digitare a
+terminale il numero di gaussiane da usare, e premere invio. Il programma salva i parametri calcolati dal fit in un file
+parameters.pkl nella cartella objects_pickles. Gli errori sui parametri sono calcolati creando N spettri aggiungendo un
+rumore gaussiano calcolato dall'ivar dello spettro (ove presente, o dal rumore medio attorno alla linea), viene poi
+effettuato il fit della linea con il numero di gaussiane precedentemente selezionato.
 
-5) A questo punto è comodo produrre un unico file contenente tutte i parametri degli spettri. Usando lo script utils.save_parameters_list() si crea automaticamente il file parameters.pkl salvato nella cartella data/.
+5) A questo punto è comodo produrre un unico file contenente tutte i parametri degli spettri. Usando lo script
+utils.save_parameters_list() si crea automaticamente il file parameters.pkl salvato nella cartella data/.
 
-6) density_estimate.py a questo punto si occupa del conteggio dei file sopra 10^9Msun, del calcolo dei coefficienti correttivi, delle densità dei blazar e dei RL e della stima delle incertezze. Quest'ultimo è effettato così: per ogni bin abbiamo N oggetti di massa variabile, estraggo N masse casuali da una distribuzione gaussiana centrata attorno al valore vero di massa e con una sigma di 0.3dex. Conto M oggetti con massa sopra 10^9Msun, faccio un'estrazione da una distribuzione poissoniana con lambda=M, ottenendo P. Estraggo da due distribuzioni binomiali con p=1/C_ID e p=1/C_spect due nuovi coefficienti correttivi, e li moltiplico per l'estrazione P del punto precedente, ottenendo D. Ripetendo 10^5 volte il processo ottengo altrettanti valori di D, che formeranno una distribuzione tendenzialmente poissoniana, ma con delle perturbazioni, dovute ai coefficienti, e shiftata rispetto al best-value, per via del contributo delle masse sopra/sotto soglia. L'intervallo di 1sigma è poi calcolato come l'intervallo tra il 16-esimo e l'84-esimo percentile.
-Lo script stampa a terminale le info sui "numeri" del campione, le tabelle che andranno nell'articolo relative ai coefficienti, alle densità, e stampa i parametri di fit della broken power-law e il valore del picco di quest'ultima. Infine stampa i plot di densità e frazione RL, nella cartella paper_plots/.
+6) density_estimate.py a questo punto si occupa del conteggio dei file sopra 10^9Msun, del calcolo dei coefficienti
+correttivi, delle densità dei blazar e dei RL e della stima delle incertezze. Quest'ultimo è effettato così: per ogni
+bin abbiamo N oggetti di massa variabile, estraggo N masse casuali da una distribuzione gaussiana centrata attorno al
+valore vero di massa e con una sigma di 0.3dex. Conto M oggetti con massa sopra 10^9Msun, faccio un'estrazione da una
+distribuzione poissoniana con lambda=M, ottenendo P. Estraggo da due distribuzioni binomiali con p=1/C_ID e p=1/C_spect
+due nuovi coefficienti correttivi, e li moltiplico per l'estrazione P del punto precedente, ottenendo D. Ripetendo 10^5
+volte il processo ottengo altrettanti valori di D, che formeranno una distribuzione tendenzialmente poissoniana, ma con
+delle perturbazioni, dovute ai coefficienti, e shiftata rispetto al best-value, per via del contributo delle masse
+sopra/sotto soglia. L'intervallo di 1sigma è poi calcolato come l'intervallo tra il 16-esimo e l'84-esimo percentile.
+Lo script stampa a terminale le info sui "numeri" del campione, le tabelle che andranno nell'articolo relative ai
+coefficienti, alle densità, e stampa i parametri di fit della broken power-law e il valore del picco di quest'ultima.
+Infine stampa i plot di densità e frazione RL, nella cartella paper_plots/.
 
 7) Per ottenere le altre info/plot contenute nel paper si possono usare degli script contenuti in utils.py:
-- stamp_plot_diskVSse: per ottenere il plot di confronto tra masse disco e masse da single epoch (output nella cartella paper_plots)
-- stamp_plot_LCIV_1350: per ottenere il plot relativo al confronto tra le luminosità del nostro campione vs quello di Shen (output nella cartella paper_plots)
+- stamp_plot_diskVSse: per ottenere il plot di confronto tra masse disco e masse da single epoch (output nella cartella
+  paper_plots)
+- stamp_plot_LCIV_1350: per ottenere il plot relativo al confronto tra le luminosità del nostro campione vs quello di
+  Shen (output nella cartella paper_plots)
 - print_C19_table: per stampare a terminale la tabella con le info del campione C19
 - get_luminosity_limits: per ottenere le luminosità limite di selezione del campione
