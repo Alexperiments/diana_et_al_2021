@@ -41,3 +41,16 @@ The script then prints the "numbers" of the sample in LaTeX table format (Tab. 1
 - `utils.stamp_plot_LCIV_1350`: to plot the comparison between the luminosities of our blazar sample and the luminosities of randomly oriented AGNs in Shen et al. (2011), saved in `paper_plots`.
 - `utils.print_C19_table`: to print the LaTeX table containing info of the C19 sample.
 - `utils.get_luminosity_limits`: to print the limiting luminosities of our selection process.
+
+## Density uncertainties
+
+The density uncertainties estimate is performed as follows:
+For each bin we have many blazars with a best-fit value of the mass. For each of these objects the script extracts `N` values for the mass from a gaussian distribution centred around the true value with a std. dev. $0.3\ dex$ (intrinsic scatter of the Vestergaard & Peterson 06 relation).
+Then, it counts the `i` objects with a mass above $10^9\ M_\odot$ and extracts one value `P` from a Poisson distribution with $\lambda=\text{i}$.
+It then calculates two mock correction coefficients (`c1` and `c2`) from two binomial distributions assuming $p=1/C_{id}$ and $p=1/C_{spect}$, respectively.
+`P`, `c1` and `c2` are then multiplied to obtain a mock blazar density point, accounting for the uncertainties on the correction coefficients.
+This procedure is performed $10^5$ times, in order to obtain a distribution for the blazar density at each redshift bin. 
+
+The distributions are mainly Poissonian but with some perturbation, due to the coefficients uncertainties, and shifted with respect to the best value due to the relative abundance of objects with a mass slightly above or slightly below the $10^9\ M_\odot$ threshold.
+
+The $1 \sigma$ interval is then calculated as the interval between the 16-th quantile and the 84-th quantile.
