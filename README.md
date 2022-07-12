@@ -8,7 +8,8 @@
 
 1.   `utils.selection()` selects the blazars in the sample CLASS within the magnitude and radio limits:
 - $\lambda L_\lambda(1350\ Å) \geq 10^{46} erg\ s^{-1}$
-- $P_{5 GHz} \geq 10^{27} W\ Hz^{-1}$
+- $P_{5 GHz} \geq 10^{27} W\ Hz^{-1}$ \
+
 The script list all the blazar candidates in `data/selection.txt`.
 The script also checks if the blazar has a saved SDSS spectrum in the *spectra_fits* folder and add this information to `data/selection.txt`.
 2.   `txtfits_to_hdf.py` reads `parameters.txt`, loads the data of each blazar (`.fits` or `.txt`) in `spectra_fits` and pre-elaborates the spectra.
