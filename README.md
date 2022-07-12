@@ -4,6 +4,10 @@
 
 **Authors: A. Diana, A. Caccianiga, L. Ighina, S. Belladitta, A. Moretti, R. Della Ceca**
 
+[ArXiv preprint](https://arxiv.org/pdf/2202.03444.pdf)
+
+[Here](https://linktr.ee/dianaalessandro) you can find the poster presented at the AGN XIV congress in Florance (2022)
+
 ## Steps to reproduce the paper results
 
 1.   `utils.selection()` selects the blazars in the sample CLASS within the magnitude and radio limits:
