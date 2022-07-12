@@ -44,3 +44,20 @@ def default_plot_settings():
     rcParams['ytick.major.pad'] = 5
     rcParams['xtick.top'] = True
     rcParams['ytick.right'] = True
+
+
+def poster_plot_settings():
+    '''Impostazioni di default per i plot destinati al paper.
+    '''
+    rcParams["figure.autolayout"] = True
+    rcParams['savefig.bbox'] = 'tight'
+    rcParams['figure.figsize'] = [5.5, 5]
+    rcParams['font.size'] = 16
+    rcParams['xtick.direction'] = 'in'
+    rcParams['ytick.direction'] = 'in'
+    rcParams['xtick.major.size'] = 0
+    rcParams['ytick.major.size'] = 0
+    rcParams['xtick.minor.size'] = 0
+    rcParams['ytick.minor.size'] = 0
+    rcParams['xtick.major.pad'] = 5
+    rcParams['ytick.major.pad'] = 5
