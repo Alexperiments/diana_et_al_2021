@@ -12,7 +12,7 @@
 
 1.   `utils.selection()` selects the blazars in the sample CLASS within the magnitude and radio limits:
 - $\lambda L_\lambda(1350\ Å) \geq 10^{46} erg\ s^{-1}$
-- $P_{5 GHz} \geq 10^{27} W\ Hz^{-1}$ \
+- $P_{5 GHz} \geq 10^{27} W\ Hz^{-1}$
 
 The script list all the blazar candidates in `data/selection.txt`.
 The script also checks if the blazar has a saved SDSS spectrum in the *spectra_fits* folder and add this information to `data/selection.txt`.
@@ -60,3 +60,6 @@ This procedure is performed $10^5$ times, in order to obtain a distribution for 
 The distributions are mainly Poissonian but with some perturbation, due to the coefficients uncertainties, and shifted with respect to the best value due to the relative abundance of objects with a mass slightly above or slightly below the $10^9\ M_\odot$ threshold.
 
 The $1 \sigma$ interval is then calculated as the interval between the 16-th quantile and the 84-th quantile.
+
+## Contact me
+dianaalessandro96@gmail.com
