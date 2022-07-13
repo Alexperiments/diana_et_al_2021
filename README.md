@@ -6,7 +6,7 @@
 
 [ArXiv preprint](https://arxiv.org/pdf/2202.03444.pdf)
 
-[Here](https://linktr.ee/dianaalessandro) you can find the poster presented at the AGN XIV congress in Florance (2022)
+[Here](https://linktr.ee/dianaalessandro) you can find the poster presented at the AGN XIV congress in Florence (2022)
 
 ## Steps to reproduce the paper results
 
